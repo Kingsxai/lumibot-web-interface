@@ -1,0 +1,12 @@
+# Ignore logs
+*.log
+
+# Ignore Python cache
+__pycache__/
+
+# Ignore virtual environments
+venv/
+
+# Ignore OS files
+*.swp
+*.tmp
