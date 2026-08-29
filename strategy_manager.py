@@ -1,4 +1,3 @@
-cat > strategy_manager.py << 'PYEOF'
 """Multi-strategy manager for Lumibot trading bot.
 
 Manages:
@@ -422,4 +421,3 @@ class MultiStrategyBot(Strategy):
             "strategy_performance": self.strategy_performance,
             "timestamp": datetime.now().isoformat(),
         }
-PYEOF
