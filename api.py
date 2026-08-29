@@ -2,6 +2,11 @@
 
 import logging
 import json
+import os
+import subprocess
+import sys
+import threading
+import uuid
 from datetime import datetime
 from typing import Dict, Any
 
@@ -22,6 +27,11 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Global strategy instance
 strategy_bot: MultiStrategyBot = None
 connected_clients = set()
+
+# Backtest job tracking
+BACKTEST_DIR = "backtests"
+os.makedirs(BACKTEST_DIR, exist_ok=True)
+backtest_jobs: Dict[str, Dict[str, Any]] = {}
 
 
 # ============================================================================
@@ -73,9 +83,54 @@ def broadcast_update():
             "open_orders": len(strategy_bot.get_orders()),
             "bracket_orders": len(strategy_bot.bracket_orders),
         }
-        socketio.emit("bot_update", data, broadcast=True)
+        socketio.emit("bot_update", data)
     except Exception as e:
         logger.error(f"Error broadcasting update: {e}")
+
+
+def _run_backtest_subprocess(job_id, symbol, start, end):
+    """Run backtest_runner.py as a subprocess and record the result.
+
+    Runs as a separate process (not a thread in this app) so that scoping
+    config.py's symbol universes for the backtest never touches the live
+    bot's in-memory config.
+    """
+    output_path = os.path.join(BACKTEST_DIR, f"{job_id}.json")
+    backtest_jobs[job_id]["status"] = "running"
+    try:
+        proc = subprocess.run(
+            [
+                sys.executable, "backtest_runner.py",
+                "--symbol", symbol,
+                "--start", start,
+                "--end", end,
+                "--output", output_path,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=600,  # 10 minute safety timeout
+        )
+        if proc.returncode != 0:
+            backtest_jobs[job_id]["status"] = "failed"
+            backtest_jobs[job_id]["error"] = proc.stderr[-2000:] or "Backtest process exited with an error"
+            return
+
+        with open(output_path, "r") as f:
+            data = json.load(f)
+
+        if data.get("success"):
+            backtest_jobs[job_id]["status"] = "completed"
+            backtest_jobs[job_id]["result"] = data
+        else:
+            backtest_jobs[job_id]["status"] = "failed"
+            backtest_jobs[job_id]["error"] = data.get("error", "Unknown error")
+
+    except subprocess.TimeoutExpired:
+        backtest_jobs[job_id]["status"] = "failed"
+        backtest_jobs[job_id]["error"] = "Backtest timed out after 10 minutes"
+    except Exception as e:
+        backtest_jobs[job_id]["status"] = "failed"
+        backtest_jobs[job_id]["error"] = str(e)
 
 
 # ============================================================================
@@ -86,11 +141,20 @@ def broadcast_update():
 def get_status():
     """Get current bot status and portfolio state."""
     try:
+        # Buying power isn't exposed on the Strategy class directly in this
+        # Lumibot version — pull it from the underlying Alpaca account,
+        # falling back to cash if that call fails for any reason.
+        try:
+            buying_power = float(strategy_bot.broker.api.get_account().buying_power)
+        except Exception as bp_error:
+            logger.warning(f"Could not fetch buying power from broker, falling back to cash: {bp_error}")
+            buying_power = float(strategy_bot.get_cash())
+
         return jsonify({
             "status": "trading" if strategy_bot.is_trading else "stopped",
             "portfolio_value": float(strategy_bot.get_portfolio_value()),
             "cash": float(strategy_bot.get_cash()),
-            "buying_power": float(strategy_bot.get_buying_power()),
+            "buying_power": buying_power,
             "positions_count": len(strategy_bot.get_positions()),
             "open_orders_count": len(strategy_bot.get_orders()),
             "bracket_orders_count": len(strategy_bot.bracket_orders),
@@ -204,6 +268,46 @@ def get_bracket_orders():
     except Exception as e:
         logger.error(f"Error getting bracket orders: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/backtest", methods=["POST"])
+def start_backtest():
+    """Kick off a backtest for a specific symbol in a background subprocess."""
+    try:
+        data = request.get_json()
+        symbol = (data.get("symbol") or "").strip().upper()
+        start = data.get("start")  # "YYYY-MM-DD"
+        end = data.get("end")      # "YYYY-MM-DD"
+
+        if not symbol:
+            return jsonify({"error": "Missing symbol"}), 400
+        if not start or not end:
+            return jsonify({"error": "Missing start or end date (YYYY-MM-DD)"}), 400
+
+        job_id = str(uuid.uuid4())
+        backtest_jobs[job_id] = {"status": "queued", "symbol": symbol, "start": start, "end": end}
+
+        thread = threading.Thread(
+            target=_run_backtest_subprocess,
+            args=(job_id, symbol, start, end),
+            daemon=True,
+        )
+        thread.start()
+
+        return jsonify({"job_id": job_id, "status": "queued"}), 202
+
+    except Exception as e:
+        logger.error(f"Error starting backtest: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/backtest/<job_id>", methods=["GET"])
+def get_backtest_status(job_id):
+    """Poll the status/result of a backtest job."""
+    job = backtest_jobs.get(job_id)
+    if not job:
+        return jsonify({"error": "Job not found"}), 404
+    return jsonify(job)
 
 
 @app.route("/", methods=["GET"])

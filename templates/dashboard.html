@@ -81,6 +81,11 @@
             background: #059669;
         }
 
+        .btn-start:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
         .btn-stop {
             background: #ef4444;
             color: white;
@@ -234,6 +239,27 @@
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0.3; }
         }
+
+        .bt-field label {
+            font-size: 12px;
+            color: #666;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .bt-field input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .bt-controls {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -343,6 +369,28 @@
             </table>
         </div>
 
+        <!-- Backtest -->
+        <div class="card table-card">
+            <div class="card-title">🧪 Run a Backtest</div>
+            <div class="bt-controls">
+                <div class="bt-field">
+                    <label>Symbol</label>
+                    <input type="text" id="bt-symbol" placeholder="AAPL" style="width: 100px; text-transform: uppercase;">
+                </div>
+                <div class="bt-field">
+                    <label>Start Date</label>
+                    <input type="date" id="bt-start">
+                </div>
+                <div class="bt-field">
+                    <label>End Date</label>
+                    <input type="date" id="bt-end">
+                </div>
+                <button class="btn-start" id="bt-run-btn" onclick="runBacktest()">▶ Run Backtest</button>
+            </div>
+            <div id="bt-status" style="margin-top: 15px; font-size: 14px; color: #666;"></div>
+            <div id="bt-results" style="margin-top: 15px;"></div>
+        </div>
+
         <!-- Orders Table -->
         <div class="card table-card">
             <div class="card-title">📋 Recent Orders</div>
@@ -377,6 +425,7 @@
         let socket;
         let botStatus = 'stopped';
         let updateCount = 0;
+        let btPollInterval = null;
 
         // Initialize WebSocket connection
         function initWebSocket() {
@@ -573,6 +622,105 @@
                 .then(r => r.json())
                 .then(data => updateDashboard(data))
                 .catch(e => console.error('Error fetching status:', e));
+        }
+
+        // ------------------------------------------------------------------
+        // Backtesting
+        // ------------------------------------------------------------------
+
+        function runBacktest() {
+            const symbol = document.getElementById('bt-symbol').value.trim().toUpperCase();
+            const start = document.getElementById('bt-start').value;
+            const end = document.getElementById('bt-end').value;
+            const statusEl = document.getElementById('bt-status');
+            const resultsEl = document.getElementById('bt-results');
+            const btn = document.getElementById('bt-run-btn');
+
+            if (!symbol || !start || !end) {
+                statusEl.textContent = 'Please enter a symbol, start date, and end date.';
+                return;
+            }
+
+            resultsEl.innerHTML = '';
+            statusEl.textContent = `Queuing backtest for ${symbol}...`;
+            btn.disabled = true;
+
+            fetch('/api/backtest', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbol, start, end })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    statusEl.textContent = 'Error: ' + data.error;
+                    btn.disabled = false;
+                    return;
+                }
+                statusEl.textContent = `Backtest running for ${symbol}... (this can take a minute or two)`;
+                pollBacktest(data.job_id, btn, statusEl, resultsEl);
+            })
+            .catch(e => {
+                statusEl.textContent = 'Error starting backtest: ' + e;
+                btn.disabled = false;
+            });
+        }
+
+        function pollBacktest(jobId, btn, statusEl, resultsEl) {
+            if (btPollInterval) clearInterval(btPollInterval);
+
+            btPollInterval = setInterval(() => {
+                fetch('/api/backtest/' + jobId)
+                    .then(r => r.json())
+                    .then(job => {
+                        if (job.status === 'completed') {
+                            clearInterval(btPollInterval);
+                            btn.disabled = false;
+                            statusEl.textContent = `Backtest complete for ${job.symbol}.`;
+                            renderBacktestResult(job.result, resultsEl);
+                        } else if (job.status === 'failed') {
+                            clearInterval(btPollInterval);
+                            btn.disabled = false;
+                            statusEl.textContent = 'Backtest failed: ' + (job.error || 'Unknown error');
+                        } else {
+                            statusEl.textContent = `Backtest status: ${job.status}...`;
+                        }
+                    })
+                    .catch(e => {
+                        clearInterval(btPollInterval);
+                        btn.disabled = false;
+                        statusEl.textContent = 'Error checking backtest status: ' + e;
+                    });
+            }, 3000);
+        }
+
+        function renderBacktestResult(data, resultsEl) {
+            const result = (data && data.result) || {};
+            // Lumibot's returned stats dict can vary; show common keys if present,
+            // otherwise fall back to a raw dump so nothing is hidden.
+            const knownKeys = ['cagr', 'total_return', 'sharpe_ratio', 'max_drawdown', 'volatility', 'romad'];
+            let html = '<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+            let foundAny = false;
+
+            knownKeys.forEach(key => {
+                if (result[key] !== undefined && result[key] !== null) {
+                    foundAny = true;
+                    let val = result[key];
+                    if (typeof val === 'number') {
+                        const isPercentish = key.includes('return') || key === 'cagr' || key === 'max_drawdown' || key === 'volatility';
+                        val = (val * (isPercentish ? 100 : 1)).toFixed(2) + (isPercentish ? '%' : '');
+                    }
+                    html += `<tr><td>${key.replace(/_/g, ' ')}</td><td>${val}</td></tr>`;
+                }
+            });
+            html += '</tbody></table>';
+
+            if (!foundAny) {
+                html = '<pre style="background: #f9fafb; padding: 12px; border-radius: 5px; overflow-x: auto; font-size: 12px;">' +
+                       JSON.stringify(result, null, 2) + '</pre>';
+            }
+
+            resultsEl.innerHTML = html;
         }
 
         // Periodic refresh

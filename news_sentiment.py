@@ -14,8 +14,18 @@ import config
 
 logger = logging.getLogger(__name__)
 
-# Load sentiment pipeline once at module level
-sentiment_pipeline = pipeline("sentiment-analysis")
+# Lazy-loaded sentiment pipeline — do NOT load at import time.
+# Loading here would block Flask/SocketIO from ever starting.
+_sentiment_pipeline = None
+
+
+def _get_sentiment_pipeline():
+    """Initialize the sentiment-analysis pipeline on first use only."""
+    global _sentiment_pipeline
+    if _sentiment_pipeline is None:
+        logger.info("Loading sentiment-analysis pipeline (first use)...")
+        _sentiment_pipeline = pipeline("sentiment-analysis")
+    return _sentiment_pipeline
 
 
 def get_yahoo_sentiment(symbol: str) -> float:
@@ -35,7 +45,8 @@ def get_yahoo_sentiment(symbol: str) -> float:
 
         headlines = [h.get_text() for h in soup.select("h3")]
         scores = []
-        
+
+        sentiment_pipeline = _get_sentiment_pipeline()
         for h in headlines[:5]:  # Analyze top 5 headlines
             result = sentiment_pipeline(h)[0]
             if result["label"] == "POSITIVE":

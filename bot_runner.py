@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 import config
 from strategy_manager import MultiStrategyBot
 from lumibot.brokers import Alpaca
+from lumibot.traders import Trader
 from api import app, socketio, init_bot
 
 
@@ -69,14 +70,16 @@ def initialize_strategy_bot(broker):
 
 
 def run_bot_in_background(strategy_bot):
-    """Run the bot's main loop in a background thread."""
+    """Run the bot's main loop in a background thread via Lumibot's Trader."""
     def bot_loop():
         try:
             logger.info("Starting bot trading loop...")
-            strategy_bot.run(parameters={})
+            trader = Trader(logfile="", backtest=False)
+            trader.add_strategy(strategy_bot)
+            trader.run_all(show_plot=False, show_tearsheet=False, save_tearsheet=False)
         except Exception as e:
             logger.error(f"Error in bot loop: {e}", exc_info=True)
-    
+
     bot_thread = threading.Thread(target=bot_loop, daemon=True)
     bot_thread.start()
     logger.info("Bot loop started in background thread")
@@ -96,7 +99,7 @@ def broadcast_initial_status(strategy_bot):
             "open_orders": 0,
             "bracket_orders": 0,
         }
-        socketio.emit("bot_status", data, broadcast=True)
+        socketio.emit("bot_status", data)
     except Exception as e:
         logger.warning(f"Could not broadcast initial status: {e}")
 

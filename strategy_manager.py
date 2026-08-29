@@ -3,12 +3,15 @@
 Manages:
 - Momentum Allocator Strategy
 - News Sentiment Strategy
+<<<<<<< HEAD
 - Scalping Strategy
 - Breakout Strategy
 - Mean Reversion Strategy
 - VWAP Strategy
 - Gap and Go Strategy
 - Reversal Strategy
+=======
+>>>>>>> a70ab28661ccd5ca535f838df24acf90c0d79313
 - Bracket Orders (stop-loss + take-profit)
 - Position lifecycle and graceful shutdown
 """
@@ -27,12 +30,15 @@ import pandas as pd
 import config
 from news_sentiment import NewsSentimentAnalyzer
 from momentum_allocator import MomentumAllocator
+<<<<<<< HEAD
 from scalping import ScalpingStrategy
 from breakout import BreakoutStrategy
 from mean_reversion import MeanReversionStrategy
 from vwap import VWAPStrategy
 from gap_and_go import GapAndGoStrategy
 from reversal import ReversalStrategy
+=======
+>>>>>>> a70ab28661ccd5ca535f838df24acf90c0d79313
 
 logger = logging.getLogger(__name__)
 
@@ -70,12 +76,15 @@ class MultiStrategyBot(Strategy):
         # Initialize sub-strategies
         self.momentum_allocator = MomentumAllocator(self)
         self.news_sentiment = NewsSentimentAnalyzer(self)
+<<<<<<< HEAD
         self.scalping = ScalpingStrategy(self)
         self.breakout = BreakoutStrategy(self)
         self.mean_reversion = MeanReversionStrategy(self)
         self.vwap = VWAPStrategy(self)
         self.gap_and_go = GapAndGoStrategy(self)
         self.reversal = ReversalStrategy(self)
+=======
+>>>>>>> a70ab28661ccd5ca535f838df24acf90c0d79313
 
         # Track bracket orders
         self.bracket_orders: Dict[str, BracketOrder] = {}
@@ -87,6 +96,7 @@ class MultiStrategyBot(Strategy):
             "momentum": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
             "sentiment": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
         }
+<<<<<<< HEAD
         self.strategy_performance.update({
             "scalping": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
             "breakout": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
@@ -95,6 +105,8 @@ class MultiStrategyBot(Strategy):
             "gap_and_go": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
             "reversal": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
         })
+=======
+>>>>>>> a70ab28661ccd5ca535f838df24acf90c0d79313
 
         logger.info("MultiStrategyBot initialized")
 
@@ -123,6 +135,7 @@ class MultiStrategyBot(Strategy):
             # Run news sentiment strategy
             self._run_news_sentiment_strategy()
 
+<<<<<<< HEAD
             # Run additional strategies
             self._run_strategy("scalping", self.scalping.analyze())
             self._run_strategy("breakout", self.breakout.analyze())
@@ -131,6 +144,8 @@ class MultiStrategyBot(Strategy):
             self._run_strategy("gap_and_go", self.gap_and_go.analyze())
             self._run_strategy("reversal", self.reversal.analyze())
 
+=======
+>>>>>>> a70ab28661ccd5ca535f838df24acf90c0d79313
             # Rebalance portfolio
             self._rebalance_portfolio()
 
@@ -183,6 +198,7 @@ class MultiStrategyBot(Strategy):
         except Exception as e:
             logger.error(f"Error in sentiment strategy: {e}", exc_info=True)
 
+<<<<<<< HEAD
     def _run_strategy(self, name, decisions):
         """Execute a generic strategy given its buy/sell decisions.
 
@@ -204,6 +220,8 @@ class MultiStrategyBot(Strategy):
         except Exception as e:
             logger.error(f"Error in {name} strategy: {e}", exc_info=True)
 
+=======
+>>>>>>> a70ab28661ccd5ca535f838df24acf90c0d79313
     def _place_bracket_order(self, symbol: str, side: str, available_capital: float):
         """Place a bracket order (entry + stop-loss + take-profit).
 
@@ -344,12 +362,15 @@ class MultiStrategyBot(Strategy):
             positions = self.get_positions()
             start_time = time.time()
 
+<<<<<<< HEAD
             # Initialize here so the later check is always valid, even if
             # there were no positions to begin with (previously this could
             # raise UnboundLocalError when `positions` was empty, since the
             # while loop below would never execute).
             remaining_positions = positions
 
+=======
+>>>>>>> a70ab28661ccd5ca535f838df24acf90c0d79313
             for position in positions:
                 try:
                     sell_order = self.create_order(
