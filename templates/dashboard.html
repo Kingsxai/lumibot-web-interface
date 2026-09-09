@@ -147,6 +147,10 @@
           <div class="card-head"><h2>News &amp; Sentiment Alerts</h2><span>Emergency-stop liquidations on severe negative news, plus scalping's news-sentiment-rider entries</span></div>
           <div class="table-scroll"><table><thead><tr><th>Time</th><th>Severity</th><th>Symbol</th><th>Message</th></tr></thead><tbody id="news-alerts-table"><tr><td colspan="4" class="empty">No alerts yet</td></tr></tbody></table></div>
         </article>
+        <article class="card">
+          <div class="card-head"><h2>⚠ Capital Sanity Alerts</h2><span>Fires if IB ever reports a buying_power/portfolio_value implausible for this account's real size — a real $100,271 fill on 2026-09-08 went undetected for a day before this existed. Empty is healthy; any entry means IB reported something wrong and needs a human look, even though position sizing is already hard-capped regardless.</span></div>
+          <div class="table-scroll"><table><thead><tr><th>Time</th><th>Field</th><th>Reported Value</th><th>Threshold</th></tr></thead><tbody id="capital-anomalies-table"><tr><td colspan="4" class="empty">No anomalies — healthy</td></tr></tbody></table></div>
+        </article>
       </section>
 
       <section id="advanced" class="advanced card">
@@ -156,6 +160,7 @@
           <div><h2>🧠 Signal Confidence Filter</h2><label class="inline-control">Min confidence <input type="number" id="confidence-threshold" min="0" max="1" step="0.05" value="0.6" onchange="updateConfidenceThreshold(this.value)"></label><table><thead><tr><th>Strategy</th><th>Fired</th><th>Filtered</th><th>Rate</th></tr></thead><tbody id="confidence-stats-table"><tr><td colspan="4" class="empty">No data</td></tr></tbody></table></div>
           <div><h2>🌙 Extended-Hours Trading</h2><p class="muted">Pre-market 4:00–9:30am ET and post-market 4:00–8:00pm ET. Always on while trading (2026-09-03: no longer a separate toggle — one bot handles regular + extended hours together).</p><p id="extended-hours-stats" class="muted">Loading…</p></div>
           <div><h2>🌍 International Markets Trading</h2><p class="muted">34 markets across Europe, Asia, the Americas, and the Middle East, plus 15 forex pairs (see config.INTERNATIONAL_MARKETS/FOREX_PAIRS for the full list). Always on while trading (2026-09-03: no longer a separate toggle).</p><p id="international-markets-stats" class="muted">Loading…</p></div>
+          <div class="tradeable-universe-card"><h2>🔎 Tradeable Universe Screener</h2><p class="muted">Which international markets are actually reachable right now vs. blocked by IB's own $2,000-minimum-balance-per-currency rule (2026-09-09 finding — confirmed live, applies per-currency regardless of share price). Candidates found in a blocked market are still shown — they become tradeable automatically once real capital crosses that floor, no code change needed.</p><div id="tradeable-universe-summary" class="muted">Loading…</div><div class="table-scroll"><table><thead><tr><th>Market</th><th>Currency</th><th>Status</th><th>Recent candidates</th><th>Last scan</th></tr></thead><tbody id="tradeable-universe-table"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody></table></div></div>
         </div>
       </section>
 
@@ -483,6 +488,22 @@
             authFetch('/api/news-alerts?limit=20').then(r => r.json()).then(data => updateNewsAlertsTable(data.alerts || [])).catch(e => console.error('Error loading news alerts:', e));
         }
 
+        // --- Capital sanity alerts (2026-09-09) ---
+        function loadCapitalAnomalies() {
+            authFetch('/api/capital-anomalies').then(r => r.json()).then(data => {
+                const tbody = document.getElementById('capital-anomalies-table');
+                const rows = data.anomalies || [];
+                if (rows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty">No anomalies — healthy</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = rows.slice().reverse().map(a => {
+                    const time = a.timestamp ? new Date(a.timestamp).toLocaleString() : '—';
+                    return `<tr><td>${time}</td><td>${a.field}</td><td class="negative">${currencySymbol}${a.value.toLocaleString()}</td><td>${currencySymbol}${a.threshold.toLocaleString()}</td></tr>`;
+                }).join('');
+            }).catch(e => console.error('Error loading capital anomalies:', e));
+        }
+
         // --- Bracket orders ---
         function updateBracketTable(brackets) {
             const tbody = document.getElementById('bracket-table');
@@ -610,6 +631,35 @@
                 if (s.last_error) parts.push(`last error: ${s.last_error}`);
                 document.getElementById('international-markets-stats').textContent = parts.join(' · ');
             }).catch(e => console.error(e));
+        }
+
+        // --- Tradeable Universe screener (2026-09-09) ---
+        function loadTradeableUniverse() {
+            authFetch('/api/tradeable-universe').then(r => r.json()).then(data => {
+                const established = data.established_currencies || [];
+                document.getElementById('tradeable-universe-summary').textContent =
+                    `Established currencies (always reachable): ${established.join(', ')}`;
+                const tbody = document.getElementById('tradeable-universe-table');
+                const rows = [];
+                const addRows = (obj, tradeable) => {
+                    Object.keys(obj).sort().forEach(marketKey => {
+                        const m = obj[marketKey];
+                        rows.push({ marketKey, ...m, tradeable });
+                    });
+                };
+                addRows(data.tradeable_markets || {}, true);
+                addRows(data.waiting_on_currency || {}, false);
+                if (rows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty">No scans yet — the international scanner runs on a 30-minute-per-market rotation, check back shortly</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = rows.map(r => {
+                    const statusLabel = r.tradeable ? '<span class="positive">✓ Tradeable</span>' : '<span class="negative">⧗ Waiting on currency</span>';
+                    const candidates = (r.candidates || []).length ? (r.candidates || []).join(', ') : '—';
+                    const lastScan = r.last_scan_at ? new Date(r.last_scan_at).toLocaleTimeString() : '—';
+                    return `<tr><td>${r.marketKey.replace(/_/g, ' ')}</td><td>${r.currency}</td><td>${statusLabel}</td><td>${candidates}</td><td>${lastScan}</td></tr>`;
+                }).join('');
+            }).catch(e => console.error('Error loading tradeable universe:', e));
         }
 
         // --- Pause new entries (distinct from Stop — exits stay active) ---
@@ -776,6 +826,7 @@
         setInterval(loadConfidenceStats, 5000);
         setInterval(loadExtendedHours, 5000);
         setInterval(loadInternationalMarkets, 5000);
+        setInterval(loadTradeableUniverse, 5000);
         setInterval(loadPauseNewEntries, 5000);
         setInterval(loadOrders, 5000);
         setInterval(loadBracketOrders, 5000);
@@ -783,6 +834,7 @@
         setInterval(loadSystemHealth, 5000);
         setInterval(loadActivity, 5000);
         setInterval(loadNewsAlerts, 5000);
+        setInterval(loadCapitalAnomalies, 5000);
         setInterval(loadPerformanceOverview, 5000);
         setInterval(loadStrategyPerformance, 5000);
         setInterval(loadRecentClosedOrders, 5000);
@@ -797,6 +849,7 @@
             loadConfidenceStats();
             loadExtendedHours();
             loadInternationalMarkets();
+            loadTradeableUniverse();
             loadPauseNewEntries();
             authFetch('/api/test-all-strategies/status').then(r => r.json()).then(data => {
                 if (data.running) startTestSweepPolling();
@@ -808,6 +861,7 @@
             loadSystemHealth();
             loadActivity();
             loadNewsAlerts();
+            loadCapitalAnomalies();
             loadPerformanceOverview();
             loadStrategyPerformance();
             loadRecentClosedOrders();

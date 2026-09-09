@@ -967,6 +967,51 @@ def get_international_markets_trading():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/capital-anomalies", methods=["GET"])
+def get_capital_anomalies():
+    """Real record of every time IB reported a buying_power/
+    portfolio_value implausible for this account's real size (2026-09-09,
+    see config.CAPITAL_SANITY_THRESHOLD_GBP and
+    project_100k_tsla_incident_and_hard_ceiling_fix memory — a real
+    $100,271 TSLA fill on 2026-09-08 went undetected for a full day
+    before this existed). Empty is the expected, healthy state; any
+    entry here means the sanity check actually caught something and
+    needs a human look, even though position sizing itself is already
+    bounded by config.HARD_POSITION_CEILING_GBP regardless."""
+    try:
+        return jsonify({"anomalies": strategy_bot.capital_anomalies})
+    except Exception as e:
+        logger.error(f"Error getting capital anomalies: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/tradeable-universe", methods=["GET"])
+def get_tradeable_universe():
+    """The "tradeable universe" screener (2026-09-09, explicit user
+    request) — per international market, whether its currency is
+    actually reachable right now (config.ACCOUNT_ESTABLISHED_CURRENCIES
+    -- see that constant's own comment for the real $2,000-minimum-
+    balance finding behind this) and the real candidates the scanner
+    most recently found there, even for markets not yet tradeable (so
+    the user can see what's WAITING to become reachable once real
+    capital crosses that floor, not just what's live today). Read-only,
+    reflects ib_side_channel_trader.py's own in-memory state — persists
+    across dashboard page loads/logins as long as the bot process stays
+    up, same as every other stats endpoint here."""
+    try:
+        universe = international_markets_trader.tradeable_universe if international_markets_trader else {}
+        tradeable = {k: v for k, v in universe.items() if v.get("tradeable")}
+        waiting = {k: v for k, v in universe.items() if not v.get("tradeable")}
+        return jsonify({
+            "established_currencies": sorted(config.ACCOUNT_ESTABLISHED_CURRENCIES),
+            "tradeable_markets": tradeable,
+            "waiting_on_currency": waiting,
+        })
+    except Exception as e:
+        logger.error(f"Error getting tradeable universe: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 def _update_env_file(updates: dict):
     """Update or append KEY=VALUE lines in .env, preserving everything
     else. Used only for live-trading credentials (see
