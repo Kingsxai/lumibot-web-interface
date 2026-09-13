@@ -260,6 +260,33 @@ CRYPTO_ROTATION_LOOKBACK_DAYS = 5
 # never mistaken for a working gate. Turning it on changes nothing yet.
 ENABLE_FOREX_CARRY_RIDER = False
 
+# 2026-09-13 (explicit user request): symbol_research.py — an LLM-based
+# trap/genuine-move research rider, targeted specifically at the 11 of 14
+# extended strategies that get zero chaos/regime filtering today (the
+# regime+chaos filter was measured to help only 4/16 strategies and hurt
+# 12 — this exists for exactly the ones that filter doesn't help, not as
+# a second layer on top of it). See symbol_research.py's own module
+# docstring for the full design. Fails open like every other rider here —
+# any missing/stale/errored research just means normal entry/exit logic
+# proceeds unchanged.
+ENABLE_SYMBOL_RESEARCH_RIDER = True
+# How long a research verdict stays trusted before it's treated as stale
+# and re-researched — the underlying 15-symbol rotating universe itself
+# turns over hourly (hourly_universe_screener.CACHE_TTL_SECONDS), so
+# trusting a verdict much longer than a few rotations risks acting on
+# reasoning about a symbol's *old* context.
+SYMBOL_RESEARCH_FRESHNESS_SECONDS = 4 * 3600
+# User's own explicit instruction: don't apply the LLM's raw predicted
+# move size directly to the take-profit ("if he thinks it's gonna go
+# triple... limit it to one point five or even two") — a damped cap, not
+# a 1:1 pass-through of a single speculative estimate.
+SYMBOL_RESEARCH_TP_MAX_MULTIPLIER = 1.5
+# Per-symbol claude -p call timeout in the standalone research script —
+# this never runs inside the live 60s iteration loop (see symbol_research.
+# py's own docstring), so this bounds the batch job's own runtime, not
+# live trading latency.
+SYMBOL_RESEARCH_TIMEOUT_SECONDS = 45
+
 # ============================================================================
 # INTERNATIONAL MARKETS (2026-09-02) — IB scanner-driven expansion beyond
 # US equities, so the bot has something to trade when the US market is

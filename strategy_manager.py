@@ -35,6 +35,7 @@ import config
 import signal_logger
 import meta_model
 import asset_class_riders
+import symbol_research
 from confirmation import confirm_signal
 from regime_indicators import compute_indicators, MIN_BARS_REQUIRED
 from regime_matcher import classify_regime, STRATEGY_REGIMES
@@ -153,6 +154,10 @@ class BracketOrder:
         # last (re)submitted for, since a DAY order silently expires at
         # 4pm ET and needs a fresh one the next session.
         self.resting_stop_date = None
+        # 2026-09-13: tracks whether symbol_research's take-profit widening
+        # has already been applied to this bracket, so a late-arriving
+        # verdict widens it once, not every cycle it stays fresh in cache.
+        self.research_tp_adjusted = False
 
     def __repr__(self):
         return f"BracketOrder({self.symbol} x{self.quantity} @ ${self.entry_price:.2f})"
@@ -989,6 +994,11 @@ class MultiStrategyBot(Strategy):
             # above.
             self._check_news_emergency_stop()
 
+            # 2026-09-13 (explicit user request): act on a symbol_research
+            # verdict that arrived after a position already opened — see
+            # _check_symbol_research_exits_and_tp_updates' own docstring.
+            self._check_symbol_research_exits_and_tp_updates()
+
             # 2026-09-11 (explicit user request): liquidate every open
             # position at Friday market close rather than carry weekend
             # gap risk -- see _check_friday_close_liquidation's own
@@ -1268,7 +1278,26 @@ class MultiStrategyBot(Strategy):
                         entry_price=current_price, confirmed=confirmed,
                         timestamp=self.get_datetime(),
                     )
-                    if confirmed and self._check_confidence(name, features) and (name, symbol) not in preempted:
+                    # 2026-09-13 (explicit user request): symbol_research
+                    # trap gate, scoped to only the 11 extended strategies
+                    # that get zero chaos/regime filtering today (see
+                    # symbol_research.py's own module docstring). Cheap
+                    # on-disk cache read, never a live LLM call — fails
+                    # open (None) if there's no fresh verdict for this
+                    # symbol, same as every other rider here.
+                    research = (
+                        symbol_research.get_research(symbol)
+                        if name in symbol_research.RESEARCH_TARGET_STRATEGIES
+                        else None
+                    )
+                    research_trap_blocked = bool(research and research.get("trap_flag"))
+                    if research:
+                        features["symbol_research"] = research
+
+                    if (
+                        confirmed and self._check_confidence(name, features)
+                        and (name, symbol) not in preempted and not research_trap_blocked
+                    ):
                         # A strategy whose validated edge is an indicator-
                         # derived exit (ATR/SMA20/etc.) rather than a fixed
                         # percent of entry price exposes get_exit_levels() —
@@ -1285,6 +1314,25 @@ class MultiStrategyBot(Strategy):
                             levels = get_levels(symbol)
                             if levels:
                                 sl_price, tp_price = levels
+                        # 2026-09-13: widen the take-profit at entry when
+                        # research sees a genuinely large move coming —
+                        # damped, not a 1:1 pass-through of a single
+                        # speculative estimate (config.
+                        # SYMBOL_RESEARCH_TP_MAX_MULTIPLIER — user's own
+                        # instruction: "if he thinks it's gonna go triple...
+                        # limit it to one point five or even two"). Only
+                        # scales the DISTANCE from entry, preserving
+                        # whatever stop this strategy already computed.
+                        if research and tp_price is not None and research.get("predicted_move_multiplier", 1.0) > 1.0:
+                            effective_mult = min(
+                                research["predicted_move_multiplier"],
+                                config.SYMBOL_RESEARCH_TP_MAX_MULTIPLIER,
+                            )
+                            tp_price = current_price + (tp_price - current_price) * effective_mult
+                            logger.info(
+                                f"symbol_research: widened {name}/{symbol} entry take-profit "
+                                f"x{effective_mult:.2f} (raw prediction x{research['predicted_move_multiplier']:.2f})"
+                            )
                         # Optional per-strategy position-sizing hook
                         # (currently only market_profile.get_position_
                         # notional) — validated 2026-09-02 in
@@ -1307,6 +1355,11 @@ class MultiStrategyBot(Strategy):
                             stop_loss_price=sl_price, take_profit_price=tp_price,
                         )
                         logger.info(f"{name} strategy triggered BUY for {symbol} (confirmed)")
+                    elif confirmed and research_trap_blocked:
+                        logger.info(
+                            f"symbol_research: blocked {name} BUY for {symbol} — flagged as a "
+                            f"likely trap/stop-hunt ({research.get('reasoning', '')})"
+                        )
                     elif confirmed and (name, symbol) in preempted:
                         logger.info(f"{name} BUY for {symbol} preempted by a better-regime-matched strategy this cycle, skipping")
                     elif confirmed:
@@ -2209,6 +2262,72 @@ class MultiStrategyBot(Strategy):
 
     def get_news_emergency_stops(self) -> List[Dict]:
         return list(self.news_emergency_stops)
+
+    def _check_symbol_research_exits_and_tp_updates(self):
+        """2026-09-13, explicit user direction: symbol_research's verdict
+        can arrive AFTER a position already opened — the research is
+        deliberately slow (a real claude -p call, run out-of-band, never
+        inside this live loop) and there's no guarantee it finishes before
+        a strategy's own normal entry logic fires on the same symbol.
+        User's own framing: "so what if the agent is late? ... he came
+        late, but he came correct" — a late verdict should still act on an
+        already-open position, not just be discarded because it missed
+        the entry.
+
+        Two things a late verdict can do, checked every cycle for every
+        open bracket order from one of symbol_research.
+        RESEARCH_TARGET_STRATEGIES:
+          - trap_flag=True -> close immediately, regardless of current
+            P&L. User's own reasoning, worked through explicitly: green,
+            mildly down, or badly down all still mean "exit" once a trap
+            is confirmed — the point isn't the current price, it's that
+            the setup itself is now known-bad. Bypasses the exclusive-
+            ownership lock the same way _check_news_emergency_stop does
+            (no strategy_name passed to _close_position) — a confirmed
+            trap isn't a competing strategy's opinion, same class of
+            portfolio-wide risk event.
+          - Otherwise, a genuine-large-move verdict widens the position's
+            OWN take-profit in place — same bracket.take_profit_price
+            reassignment the priority-takeover system already uses
+            elsewhere in this file, checked in software every cycle by
+            _check_bracket_orders, so this needs no broker-side order
+            cancel/replace. research_tp_adjusted guards against re-
+            widening the same position every cycle its verdict stays
+            fresh in cache.
+        """
+        try:
+            for symbol, bracket in list(self.bracket_orders.items()):
+                if bracket.strategy_name not in symbol_research.RESEARCH_TARGET_STRATEGIES:
+                    continue
+                research = symbol_research.get_research(symbol)
+                if not research:
+                    continue
+
+                if research.get("trap_flag"):
+                    logger.warning(
+                        f"symbol_research: late trap verdict for {symbol} "
+                        f"({bracket.strategy_name}, currently ${bracket.current_price:.2f} vs "
+                        f"entry ${bracket.entry_price:.2f}) — closing regardless of current P&L "
+                        f"({research.get('reasoning', '')})"
+                    )
+                    self._close_position(symbol, reason="symbol_research_trap")
+                    if symbol in self.bracket_orders:
+                        del self.bracket_orders[symbol]
+                    continue
+
+                mult = research.get("predicted_move_multiplier", 1.0)
+                if not bracket.research_tp_adjusted and mult > 1.0:
+                    effective_mult = min(mult, config.SYMBOL_RESEARCH_TP_MAX_MULTIPLIER)
+                    old_tp = bracket.take_profit_price
+                    bracket.take_profit_price = bracket.entry_price + (old_tp - bracket.entry_price) * effective_mult
+                    bracket.research_tp_adjusted = True
+                    logger.info(
+                        f"symbol_research: late verdict widened {symbol} ({bracket.strategy_name}) "
+                        f"take-profit ${old_tp:.2f} -> ${bracket.take_profit_price:.2f} "
+                        f"(x{effective_mult:.2f}, raw prediction x{mult:.2f})"
+                    )
+        except Exception as e:
+            logger.error(f"Error checking symbol research exits/TP updates: {e}", exc_info=True)
 
     def _close_position(self, symbol: str, reason: str = "manual", strategy_name: str = None) -> bool:
         """Close a position and record trade.
