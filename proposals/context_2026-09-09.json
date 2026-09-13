@@ -1,0 +1,807 @@
+{
+  "date": "2026-09-09",
+  "generated_at": "2026-09-09T13:40:02.073318",
+  "recent_signals_24h": [
+    {
+      "timestamp": "2026-09-09T09:36:08.571271-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMD",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 501.5
+    },
+    {
+      "timestamp": "2026-09-09T09:35:08.883496-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMD",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 501.0
+    },
+    {
+      "timestamp": "2026-09-09T09:34:08.521147-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMD",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 501.0
+    },
+    {
+      "timestamp": "2026-09-09T09:29:11.300469-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 494.44
+    },
+    {
+      "timestamp": "2026-09-09T09:29:08.688707-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AAPL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 315.17
+    },
+    {
+      "timestamp": "2026-09-09T09:28:11.227286-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 494.33
+    },
+    {
+      "timestamp": "2026-09-09T09:28:08.470404-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AAPL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 315.28
+    },
+    {
+      "timestamp": "2026-09-09T09:27:08.541780-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 494.39
+    },
+    {
+      "timestamp": "2026-09-09T09:22:08.806606-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMZN",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 252.8
+    },
+    {
+      "timestamp": "2026-09-09T09:20:08.657393-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMD",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 500.0
+    },
+    {
+      "timestamp": "2026-09-09T09:19:11.231326-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMD",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 500.91
+    },
+    {
+      "timestamp": "2026-09-09T09:19:08.429600-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 493.55
+    },
+    {
+      "timestamp": "2026-09-09T09:18:14.232986-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "NVDA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 224.8
+    },
+    {
+      "timestamp": "2026-09-09T09:18:11.212901-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 493.5
+    },
+    {
+      "timestamp": "2026-09-09T09:18:08.769842-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AAPL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 315.2
+    },
+    {
+      "timestamp": "2026-09-09T09:17:11.431828-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "NVDA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 224.78
+    },
+    {
+      "timestamp": "2026-09-09T09:17:08.496046-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AAPL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 315.26
+    },
+    {
+      "timestamp": "2026-09-09T09:16:08.447346-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AAPL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 315.19
+    },
+    {
+      "timestamp": "2026-09-09T09:00:08.639297-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "NVDA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 224.55
+    },
+    {
+      "timestamp": "2026-09-09T08:53:00.949063-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.13
+    },
+    {
+      "timestamp": "2026-09-09T08:52:01.032146-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:51:00.922913-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.09
+    },
+    {
+      "timestamp": "2026-09-09T08:50:01.398881-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "NVDA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 224.57
+    },
+    {
+      "timestamp": "2026-09-09T08:50:01.104837-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.09
+    },
+    {
+      "timestamp": "2026-09-09T08:49:01.138576-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "NVDA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 224.56
+    },
+    {
+      "timestamp": "2026-09-09T08:49:00.937276-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.09
+    },
+    {
+      "timestamp": "2026-09-09T08:48:01.176772-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "NVDA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 224.55
+    },
+    {
+      "timestamp": "2026-09-09T08:48:00.952840-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.09
+    },
+    {
+      "timestamp": "2026-09-09T08:47:01.505999-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:45:59.599874-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:44:59.500965-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:44:01.280812-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 493.95
+    },
+    {
+      "timestamp": "2026-09-09T08:44:00.624598-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:43:00.210880-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 493.95
+    },
+    {
+      "timestamp": "2026-09-09T08:42:59.386919-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:42:01.214796-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 493.17
+    },
+    {
+      "timestamp": "2026-09-09T08:42:01.015692-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:41:01.270635-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMZN",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 252.63
+    },
+    {
+      "timestamp": "2026-09-09T08:41:00.968202-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:40:01.294365-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMZN",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 252.63
+    },
+    {
+      "timestamp": "2026-09-09T08:40:01.070496-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:39:01.189918-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMZN",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 252.63
+    },
+    {
+      "timestamp": "2026-09-09T08:39:00.976660-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:38:01.110446-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.0
+    },
+    {
+      "timestamp": "2026-09-09T08:37:00.889891-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.13
+    },
+    {
+      "timestamp": "2026-09-09T08:36:00.910025-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.13
+    },
+    {
+      "timestamp": "2026-09-09T08:35:01.491391-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.11
+    },
+    {
+      "timestamp": "2026-09-09T08:34:01.238700-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.03
+    },
+    {
+      "timestamp": "2026-09-09T08:33:01.104364-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.04
+    },
+    {
+      "timestamp": "2026-09-09T08:32:00.844595-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.01
+    },
+    {
+      "timestamp": "2026-09-09T08:31:02.214249-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.08
+    },
+    {
+      "timestamp": "2026-09-09T08:30:01.982083-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.81
+    },
+    {
+      "timestamp": "2026-09-09T08:29:06.656009-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.1
+    },
+    {
+      "timestamp": "2026-09-09T08:28:01.636887-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.07
+    },
+    {
+      "timestamp": "2026-09-09T08:27:02.207248-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.07
+    },
+    {
+      "timestamp": "2026-09-09T08:26:02.831787-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 493.95
+    },
+    {
+      "timestamp": "2026-09-09T08:26:01.980542-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.07
+    },
+    {
+      "timestamp": "2026-09-09T08:25:02.524598-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 493.95
+    },
+    {
+      "timestamp": "2026-09-09T08:25:01.727555-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.07
+    },
+    {
+      "timestamp": "2026-09-09T08:24:03.328445-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 493.95
+    },
+    {
+      "timestamp": "2026-09-09T08:24:03.161798-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T08:23:01.251176-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.81
+    },
+    {
+      "timestamp": "2026-09-09T08:22:01.776340-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.81
+    },
+    {
+      "timestamp": "2026-09-09T08:21:00.992846-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.81
+    },
+    {
+      "timestamp": "2026-09-09T08:20:01.361852-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.81
+    },
+    {
+      "timestamp": "2026-09-09T08:19:01.705410-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.81
+    },
+    {
+      "timestamp": "2026-09-09T08:18:04.180258-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.81
+    },
+    {
+      "timestamp": "2026-09-09T08:17:00.832060-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.81
+    },
+    {
+      "timestamp": "2026-09-09T08:15:59.841498-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.81
+    },
+    {
+      "timestamp": "2026-09-09T08:15:00.054419-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.32
+    },
+    {
+      "timestamp": "2026-09-09T08:13:59.867531-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.45
+    },
+    {
+      "timestamp": "2026-09-09T08:12:59.993809-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.51
+    },
+    {
+      "timestamp": "2026-09-09T08:11:59.957820-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.51
+    },
+    {
+      "timestamp": "2026-09-09T08:11:00.672006-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.51
+    },
+    {
+      "timestamp": "2026-09-09T08:10:00.880928-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.52
+    },
+    {
+      "timestamp": "2026-09-09T08:08:59.981973-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.5
+    },
+    {
+      "timestamp": "2026-09-09T08:08:01.779674-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.5
+    },
+    {
+      "timestamp": "2026-09-09T08:07:00.957524-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 493.95
+    },
+    {
+      "timestamp": "2026-09-09T08:07:00.735876-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.34
+    },
+    {
+      "timestamp": "2026-09-09T08:06:00.839384-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 493.95
+    },
+    {
+      "timestamp": "2026-09-09T08:06:00.652918-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 249.98
+    },
+    {
+      "timestamp": "2026-09-09T08:04:59.873530-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T08:04:01.219356-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "NVDA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 225.73
+    },
+    {
+      "timestamp": "2026-09-09T08:04:00.373156-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T08:02:59.936993-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T08:02:00.011772-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T08:00:59.891374-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T08:00:00.144154-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T07:58:59.993377-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T07:58:00.055447-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T07:57:02.891299-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMD",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 501.0
+    },
+    {
+      "timestamp": "2026-09-09T07:57:01.223046-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "NVDA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 225.73
+    },
+    {
+      "timestamp": "2026-09-09T07:56:59.936381-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T07:56:01.137777-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "NVDA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 225.73
+    },
+    {
+      "timestamp": "2026-09-09T07:55:59.980019-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T07:55:00.226459-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T07:53:59.942889-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T07:52:59.921792-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T07:52:00.349637-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    },
+    {
+      "timestamp": "2026-09-09T07:51:00.721195-04:00",
+      "strategy_name": "momentum",
+      "symbol": "CRM",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 250.0
+    }
+  ],
+  "note": "Read via direct SQLite access to signals.db -- works whether or not the live bot process is currently running. If recent_signals_24h is empty, either the bot hasn't run recently or the pods (pod_stock/pod_etf) haven't fired yet -- not necessarily an error."
+}

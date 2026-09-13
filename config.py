@@ -15,8 +15,28 @@ BROKER_CONFIG = {
 # PORTFOLIO & RISK MANAGEMENT
 # ============================================================================
 
-# Maximum % of portfolio to allocate per position
-MAX_POSITION_SIZE = 0.10  # 10% per position
+# Maximum % of portfolio to allocate per position.
+# 2026-09-12: raised 10% -> 36% -> 37% (final value), explicit user
+# decision, after a marathon comparison showed the ATR-sizing formula
+# (self.risk_pct * pool / stop_distance, see _atr_position_notional in
+# extended_strategies_live.py) would otherwise size UP to 100% of the
+# account on a tight-stop trade (confirmed live in a backtest: a
+# 0.68%-stop PCG trade consumed the entire $136.91 pool) -- ATR sizing has
+# no ceiling of its own, it only ever gets capped by whatever this
+# constant computes as available_capital. 37% was chosen as a deliberate
+# middle ground: well above Kelly's own natural ~26.5% fraction (validated
+# on lab_range, the project's best-performing strategy), but nowhere near
+# the 100%-of-account concentration ATR sizing hit uncapped.
+# IMPORTANT: HARD_POSITION_CEILING_GBP below is a flat DOLLAR amount, not
+# a percentage -- once portfolio_value exceeds ~$676 (where 37% of it
+# equals $250), the hard ceiling silently takes over as the REAL cap and
+# this percentage stops mattering at all. At this account's current size
+# (~$136-170) that crossover is moot, but raise HARD_POSITION_CEILING_GBP
+# manually if real capital ever grows well past ~$676, or this 37% figure
+# becomes decorative. See project memory, "MAX_POSITION_SIZE raised to
+# 36/37%" (2026-09-12), for the full smart-money/liquidity-sweep reasoning
+# behind not leaving this fully uncapped.
+MAX_POSITION_SIZE = 0.37
 
 # Stop loss % from entry price
 STOP_LOSS_PERCENT = 0.05  # 5%
@@ -56,6 +76,54 @@ MIN_CASH_BUFFER = 0.05  # Keep 5% cash
 # if IB reports another inflated figure. Raise this only as real capital
 # genuinely grows, not preemptively.
 HARD_POSITION_CEILING_GBP = 250.0
+
+# 2026-09-12 (explicit user request): fixed priority rank, best first,
+# for strategy_manager.py's _check_priority_takeovers -- when a symbol is
+# already held by a lower-ranked strategy and a higher-ranked one has a
+# fresh BUY signal for it this cycle, the higher-ranked strategy takes
+# over that position's exit management (stop-loss/take-profit swapped to
+# its own; the position itself -- shares, entry price, cost basis -- is
+# NEVER touched, no liquidation, no re-entry). See project memory,
+# "Priority takeover system" (2026-09-12), for the full trigger rule.
+#
+# DEFAULT ORDER -- this is a starting point, not a validated ranking: the
+# top 15 are ordered by real per-strategy $ contribution from the
+# 2026-09-12 week-one (Aug 24-28) shared-pool hierarchy simulation with
+# lab_range excluded (project_filter_effect_per_strategy_2026_09_12 /
+# project_live_strategies_prior_week_shared_pool_sim_2026_09_12); lab_range
+# itself is placed 2nd on the strength of its OWN much larger, separately-
+# validated ATR-sized result (+23.71%, see project_sizing_marathon_
+# methodology) despite being excluded from that specific sim run. The
+# remaining, currently-disabled original 7 strategies are appended in
+# their pre-existing sub_strategies dict order (inert while OFF; rank
+# among each other only matters if more than one is enabled later).
+# EDIT THIS LIST directly to change priority -- no other code change
+# needed.
+STRATEGY_PRIORITY_RANK = [
+    "scalping_v2",
+    "lab_range",
+    "discount_zone",
+    "asymmetric_dual",
+    "scalping",
+    "volume_divergence_grab",
+    "fakeout_breakout_fib",
+    "macd_200ema",
+    "volume_absorption",
+    "candle_taxonomy",
+    "supply_demand",
+    "ema_ribbon_smi",
+    "supertrend_200ema",
+    "rigorous_rr",
+    "volume_profile",
+    "breakout_chandelier",
+    "momentum",
+    "breakout",
+    "mean_reversion",
+    "vwap",
+    "gap_and_go",
+    "reversal",
+    "market_profile",
+]
 
 # 2026-09-09: separate from HARD_POSITION_CEILING_GBP above — that caps
 # the OUTPUT (never size a position past this), this catches the INPUT

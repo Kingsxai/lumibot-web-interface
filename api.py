@@ -733,7 +733,10 @@ def get_bracket_orders():
 
 @app.route("/api/signal-settings", methods=["GET"])
 def get_signal_settings():
-    """Get the current triple-barrier / meta-model confidence settings."""
+    """Get the current triple-barrier / meta-model confidence settings,
+    plus (2026-09-12) the two dashboard-editable position-sizing figures
+    (max_position_size, hard_position_ceiling_gbp) -- same generic
+    signal_settings table/mechanism, just a different theme of setting."""
     try:
         return jsonify(get_all_settings())
     except Exception as e:
@@ -743,11 +746,16 @@ def get_signal_settings():
 
 @app.route("/api/signal-settings", methods=["POST"])
 def update_signal_settings():
-    """Update triple-barrier / meta-model confidence settings from the dashboard."""
+    """Update triple-barrier / meta-model confidence settings, and/or the
+    position-sizing figures (max_position_size, hard_position_ceiling_gbp),
+    from the dashboard. See project_max_position_size_raised_36pct_2026_09_12
+    memory for why max_position_size is currently 0.37 and
+    hard_position_ceiling_gbp is currently 250.0 -- not arbitrary numbers."""
     try:
         data = request.get_json()
         allowed_keys = {"stop_loss_percent", "take_profit_percent",
-                         "time_limit_days", "min_signal_confidence"}
+                         "time_limit_days", "min_signal_confidence",
+                         "max_position_size", "hard_position_ceiling_gbp"}
         updated = {}
         for key, value in data.items():
             if key in allowed_keys:

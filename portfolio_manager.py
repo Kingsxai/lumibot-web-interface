@@ -37,7 +37,13 @@ from dataclasses import dataclass
 from typing import Optional
 
 import config
-from ib_connector import IBConnector
+try:
+    # 2026-09-10: IB-only, archived to ib_legacy/ (Alpaca-only move) --
+    # only used as a type hint on the unused get_investable_capital()
+    # below (pod-era code, never actually called in the live path).
+    from ib_connector import IBConnector
+except ImportError:
+    IBConnector = None
 
 logger = logging.getLogger(__name__)
 

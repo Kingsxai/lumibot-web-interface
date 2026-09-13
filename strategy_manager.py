@@ -18,6 +18,7 @@ Manages:
 
 import logging
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from typing import Dict, List, Optional
 from decimal import Decimal
 import threading
@@ -33,9 +34,8 @@ import pandas as pd
 import config
 import signal_logger
 import meta_model
-import ib_side_channel_trader
-from confirmation import confirm_signal
 import asset_class_riders
+from confirmation import confirm_signal
 from regime_indicators import compute_indicators, MIN_BARS_REQUIRED
 from regime_matcher import classify_regime, STRATEGY_REGIMES
 from news_sentiment import NewsSentimentAnalyzer
@@ -48,21 +48,38 @@ from vwap import VWAPStrategy
 from gap_and_go import GapAndGoStrategy
 from reversal import ReversalStrategy
 from market_profile import MarketProfileStrategy
-
-# 2026-09-04 five-category-pod cutover — see _run_pod_strategies below for
-# why only stock_scanner is actually summoned for order placement right
-# now (etf_scanner/commodity_scanner/forex_scanner/crypto_scanner exist
-# and are imported for their scan/regime logic to be reachable later, but
-# their underlying instruments need contract-routing support
-# _place_bracket_order doesn't have yet).
-import ib_connector
-import stock_scanner
-import etf_scanner
-import commodity_scanner
-import forex_scanner
-import crypto_scanner
+from extended_strategies_live import (
+    LabRangeStrategy, SupplyDemandStrategy, Supertrend200EmaStrategy,
+    FakeoutBreakoutFibStrategy, Macd200EmaStrategy, EmaRibbonSmiStrategy,
+    DiscountZoneStrategy, BreakoutChandelierStrategy, VolumeDivergenceGrabStrategy,
+    AsymmetricDualStrategy, RigorousRrStrategy, VolumeAbsorptionStrategy,
+    CandleTaxonomyStrategy, VolumeProfileStrategy,
+)
 import portfolio_manager
 import risk_rules
+
+# 2026-09-10: IB-only modules (international/forex/extended-hours side
+# channel, the five-category pod system, cross-market riders) archived to
+# ib_legacy/ as part of the move to Alpaca-only (see project memory,
+# "Broker reversal: back to Alpaca-only") -- IB's per-share commission
+# structure doesn't fit this account's thin scalping margins. Imported
+# defensively (None on failure) rather than deleted outright so every
+# runtime reference below (all already broker-type-gated, e.g.
+# `self.ib_aux = ... if isinstance(self.broker, InteractiveBrokers) else
+# None`) keeps working exactly as before for the now-permanent case of
+# "not IB" -- nothing needs to change at every call site, only here and
+# at POD_MODULES below.
+try:
+    import ib_side_channel_trader
+    import ib_connector
+    import stock_scanner
+    import etf_scanner
+    import commodity_scanner
+    import forex_scanner
+    import crypto_scanner
+except ImportError:
+    ib_side_channel_trader = ib_connector = None
+    stock_scanner = etf_scanner = commodity_scanner = forex_scanner = crypto_scanner = None
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +134,25 @@ class BracketOrder:
         self.stop_loss_order_id = None
         self.take_profit_order_id = None
         self.status = "PENDING"  # PENDING, FILLED, CLOSED
+        # 2026-09-11: the real Alpaca-side resting stop order backing this
+        # bracket's stop_loss_price (see _submit_resting_stop_order) --
+        # stop_loss_order_id above now actually gets populated. Alpaca
+        # rejects fractional quantities combined with bracket/OCO order
+        # classes ("fractional orders must be simple orders", confirmed
+        # live), and fractional stop orders are DAY-only (GTC rejected:
+        # "stop/stop_limit fractional GTC orders are not enabled") -- so
+        # this is intentionally a single resting SELL STOP only (not a
+        # matched stop+limit OCO pair): a lone stop order can't create an
+        # accidental short if it fires while unattended, but two
+        # independent (non-OCO-linked) resting orders could -- if one
+        # fills while the bot is down, the other stays live and could
+        # ALSO later fill against shares we no longer own. Take-profit
+        # stays software-managed (_check_bracket_orders) only; missing a
+        # take-profit during a disconnect is a smaller problem than an
+        # accidental short. resting_stop_date tracks which day this was
+        # last (re)submitted for, since a DAY order silently expires at
+        # 4pm ET and needs a fresh one the next session.
+        self.resting_stop_date = None
 
     def __repr__(self):
         return f"BracketOrder({self.symbol} x{self.quantity} @ ${self.entry_price:.2f})"
@@ -209,13 +245,18 @@ POD_ORDER_CATEGORIES = frozenset({"STOCK", "ETF", "COMMODITY", "FOREX", "CRYPTO"
 # same scan_instrument(connector, instrument)/scan_universe(connector,
 # universe) shape (see each module's own docstring), so this is the only
 # per-pod-specific lookup _run_pod_strategies needs.
+# Empty when the IB-only pod scanners are archived (see the import block
+# above) -- _run_pod_strategies' own `if not enabled_categories: return`
+# (gated on signal_logger's pod_* toggles, seeded OFF by default) already
+# means this never gets looked up in that state, but build it as empty
+# rather than let the attribute access below raise at import time.
 POD_MODULES = {
-    "STOCK": (stock_scanner, stock_scanner.STOCK_UNIVERSE),
-    "ETF": (etf_scanner, etf_scanner.ETF_UNIVERSE),
-    "COMMODITY": (commodity_scanner, commodity_scanner.COMMODITY_UNIVERSE),
-    "FOREX": (forex_scanner, forex_scanner.FOREX_UNIVERSE),
-    "CRYPTO": (crypto_scanner, crypto_scanner.CRYPTO_UNIVERSE),
-}
+    "STOCK": (stock_scanner, getattr(stock_scanner, "STOCK_UNIVERSE", [])),
+    "ETF": (etf_scanner, getattr(etf_scanner, "ETF_UNIVERSE", [])),
+    "COMMODITY": (commodity_scanner, getattr(commodity_scanner, "COMMODITY_UNIVERSE", [])),
+    "FOREX": (forex_scanner, getattr(forex_scanner, "FOREX_UNIVERSE", [])),
+    "CRYPTO": (crypto_scanner, getattr(crypto_scanner, "CRYPTO_UNIVERSE", [])),
+} if stock_scanner is not None else {}
 
 
 class MultiStrategyBot(Strategy):
@@ -272,6 +313,20 @@ class MultiStrategyBot(Strategy):
         self.last_iteration_completed_at = None
         self.trading_started_at = None
 
+        # 2026-09-11 (explicit user request): tracks the last date this
+        # bot ran the Friday-4pm-ET liquidation (see
+        # _check_friday_close_liquidation) so it only fires once per
+        # Friday rather than every iteration for the rest of the evening.
+        self._friday_liquidation_date = None
+        # See _check_friday_preclose_pause — tracks whether THAT mechanism
+        # (not the user manually) is the one currently holding new_entries_
+        # paused on, so it knows it's safe to auto-clear it again.
+        self._friday_preclose_auto_paused = False
+        # Symbols the Friday liquidation deferred because they were red
+        # at the time — see _check_friday_close_liquidation /
+        # _check_pending_green_liquidations.
+        self._friday_pending_green_liquidation: set = set()
+
         # Initialize sub-strategies
         self.momentum_allocator = MomentumAllocator(self)
         self.news_sentiment = NewsSentimentAnalyzer(self)
@@ -283,6 +338,26 @@ class MultiStrategyBot(Strategy):
         self.gap_and_go = GapAndGoStrategy(self)
         self.reversal = ReversalStrategy(self)
         self.market_profile = MarketProfileStrategy(self)
+
+        # 14 new strategies (2026-09-11) from this session's sizing/
+        # collision-analysis marathon -- see extended_strategies_live.py's
+        # own module docstring. Seeded OFF by default in
+        # signal_logger.ALL_STRATEGY_NAMES; nothing here trades until a
+        # human enables it per-strategy on the dashboard.
+        self.lab_range = LabRangeStrategy(self)
+        self.supply_demand = SupplyDemandStrategy(self)
+        self.supertrend_200ema = Supertrend200EmaStrategy(self)
+        self.fakeout_breakout_fib = FakeoutBreakoutFibStrategy(self)
+        self.macd_200ema = Macd200EmaStrategy(self)
+        self.ema_ribbon_smi = EmaRibbonSmiStrategy(self)
+        self.discount_zone = DiscountZoneStrategy(self)
+        self.breakout_chandelier = BreakoutChandelierStrategy(self)
+        self.volume_divergence_grab = VolumeDivergenceGrabStrategy(self)
+        self.asymmetric_dual = AsymmetricDualStrategy(self)
+        self.rigorous_rr = RigorousRrStrategy(self)
+        self.volume_absorption = VolumeAbsorptionStrategy(self)
+        self.candle_taxonomy = CandleTaxonomyStrategy(self)
+        self.volume_profile_strat = VolumeProfileStrategy(self)
 
         # IB-only auxiliary connection (2026-09-03 consolidation) —
         # international markets (LSE/ASX), forex, and US extended-hours
@@ -417,6 +492,21 @@ class MultiStrategyBot(Strategy):
             "vwap": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
             "gap_and_go": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
             "reversal": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "market_profile": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "lab_range": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "supply_demand": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "supertrend_200ema": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "fakeout_breakout_fib": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "macd_200ema": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "ema_ribbon_smi": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "discount_zone": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "breakout_chandelier": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "volume_divergence_grab": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "asymmetric_dual": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "rigorous_rr": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "volume_absorption": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "candle_taxonomy": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
+            "volume_profile": {"trades": 0, "wins": 0, "losses": 0, "pnl": 0},
         })
 
         # Phase 4: meta-model confidence gate stats (fired vs filtered),
@@ -467,6 +557,20 @@ class MultiStrategyBot(Strategy):
                 self.ib_aux.reconcile_positions()
             except Exception as e:
                 logger.error(f"Error connecting ib_aux at startup: {e}")
+
+        # 2026-09-11 fix (found live): self.bracket_orders is in-memory
+        # only and gets wiped on every process restart, but real positions
+        # and their real resting stop orders (see _submit_resting_stop_
+        # order) survive on Alpaca's own books across the restart. Without
+        # this, a position that existed before a restart has no
+        # BracketOrder entry at all, so _close_position can't find its
+        # stop_loss_order_id to cancel the resting order before selling —
+        # the software's own sell then gets rejected with "insufficient
+        # qty available" because those shares are legitimately held by an
+        # untracked resting stop order (confirmed live: ATEC and MSFT both
+        # hit this repeatedly after a restart, same day this was added).
+        # Mirrors ib_aux.reconcile_positions() above for the Alpaca path.
+        self._reconcile_bracket_orders_from_broker()
 
         logger.info("MultiStrategyBot initialized")
 
@@ -819,6 +923,20 @@ class MultiStrategyBot(Strategy):
             "gap_and_go": self.gap_and_go,
             "reversal": self.reversal,
             "market_profile": self.market_profile,
+            "lab_range": self.lab_range,
+            "supply_demand": self.supply_demand,
+            "supertrend_200ema": self.supertrend_200ema,
+            "fakeout_breakout_fib": self.fakeout_breakout_fib,
+            "macd_200ema": self.macd_200ema,
+            "ema_ribbon_smi": self.ema_ribbon_smi,
+            "discount_zone": self.discount_zone,
+            "breakout_chandelier": self.breakout_chandelier,
+            "volume_divergence_grab": self.volume_divergence_grab,
+            "asymmetric_dual": self.asymmetric_dual,
+            "rigorous_rr": self.rigorous_rr,
+            "volume_absorption": self.volume_absorption,
+            "candle_taxonomy": self.candle_taxonomy,
+            "volume_profile": self.volume_profile_strat,
         }
         result = {}
         for name, sub in sub_strategies.items():
@@ -871,6 +989,29 @@ class MultiStrategyBot(Strategy):
             # above.
             self._check_news_emergency_stop()
 
+            # 2026-09-11 (explicit user request): liquidate every open
+            # position at Friday market close rather than carry weekend
+            # gap risk -- see _check_friday_close_liquidation's own
+            # docstring for why nothing did this automatically before
+            # (Alpaca has no such built-in behavior, and the bot's own
+            # equivalent IB-only mechanism was archived in the broker
+            # migration).
+            self._check_friday_close_liquidation()
+
+            # Every iteration, any day — picks up whatever the Friday
+            # check above deferred as red and closes it the moment it
+            # turns green (see _check_pending_green_liquidations).
+            self._check_pending_green_liquidations()
+
+            # 2026-09-11 (explicit user request, prompted by the very
+            # first Friday liquidation run: a real AMZN entry fired at
+            # 15:59:44 ET and was liquidated again 56 seconds later) --
+            # stop opening brand-new positions in the run-up to the
+            # Friday close, so nothing gets opened just to be immediately
+            # flattened (or worse, get stuck unfilled like the
+            # liquidation orders below did the same day).
+            self._check_friday_preclose_pause()
+
             # Collect every enabled strategy's raw decisions up front, before
             # any order is placed, so same-cycle regime-precedence conflicts
             # between strategies can be resolved first (see
@@ -893,12 +1034,35 @@ class MultiStrategyBot(Strategy):
                 "gap_and_go": self.gap_and_go,
                 "reversal": self.reversal,
                 "market_profile": self.market_profile,
+                "lab_range": self.lab_range,
+                "supply_demand": self.supply_demand,
+                "supertrend_200ema": self.supertrend_200ema,
+                "fakeout_breakout_fib": self.fakeout_breakout_fib,
+                "macd_200ema": self.macd_200ema,
+                "ema_ribbon_smi": self.ema_ribbon_smi,
+                "discount_zone": self.discount_zone,
+                "breakout_chandelier": self.breakout_chandelier,
+                "volume_divergence_grab": self.volume_divergence_grab,
+                "asymmetric_dual": self.asymmetric_dual,
+                "rigorous_rr": self.rigorous_rr,
+                "volume_absorption": self.volume_absorption,
+                "candle_taxonomy": self.candle_taxonomy,
+                "volume_profile": self.volume_profile_strat,
             }
             all_decisions = {
                 name: (sub.analyze() if signal_logger.is_strategy_enabled(name) else {})
                 for name, sub in sub_strategies.items()
             }
             preempted, contested, resolved = self._resolve_regime_precedence(all_decisions)
+
+            # 2026-09-12 (explicit user request): priority takeovers --
+            # separate from and runs BEFORE the regime-precedence-resolved
+            # per-strategy order placement below, so a symbol handed over
+            # here already shows an open position by the time the winning
+            # strategy's own _run_strategy call reaches it (which then
+            # just no-ops on _place_bracket_order's existing "already have
+            # a position" guard -- no double-entry).
+            self._check_priority_takeovers(all_decisions, preempted)
 
             # Run momentum strategy
             self._run_momentum_strategy(all_decisions["momentum"], preempted, contested, resolved)
@@ -913,6 +1077,24 @@ class MultiStrategyBot(Strategy):
             self._run_strategy("gap_and_go", all_decisions["gap_and_go"], preempted, contested, resolved)
             self._run_strategy("reversal", all_decisions["reversal"], preempted, contested, resolved)
             self._run_strategy("market_profile", all_decisions["market_profile"], preempted, contested, resolved)
+
+            # 14 new strategies (2026-09-11) -- same _run_strategy path,
+            # seeded OFF by default so is_strategy_enabled() short-circuits
+            # analyze() to {} for each until a human enables it.
+            self._run_strategy("lab_range", all_decisions["lab_range"], preempted, contested, resolved)
+            self._run_strategy("supply_demand", all_decisions["supply_demand"], preempted, contested, resolved)
+            self._run_strategy("supertrend_200ema", all_decisions["supertrend_200ema"], preempted, contested, resolved)
+            self._run_strategy("fakeout_breakout_fib", all_decisions["fakeout_breakout_fib"], preempted, contested, resolved)
+            self._run_strategy("macd_200ema", all_decisions["macd_200ema"], preempted, contested, resolved)
+            self._run_strategy("ema_ribbon_smi", all_decisions["ema_ribbon_smi"], preempted, contested, resolved)
+            self._run_strategy("discount_zone", all_decisions["discount_zone"], preempted, contested, resolved)
+            self._run_strategy("breakout_chandelier", all_decisions["breakout_chandelier"], preempted, contested, resolved)
+            self._run_strategy("volume_divergence_grab", all_decisions["volume_divergence_grab"], preempted, contested, resolved)
+            self._run_strategy("asymmetric_dual", all_decisions["asymmetric_dual"], preempted, contested, resolved)
+            self._run_strategy("rigorous_rr", all_decisions["rigorous_rr"], preempted, contested, resolved)
+            self._run_strategy("volume_absorption", all_decisions["volume_absorption"], preempted, contested, resolved)
+            self._run_strategy("candle_taxonomy", all_decisions["candle_taxonomy"], preempted, contested, resolved)
+            self._run_strategy("volume_profile", all_decisions["volume_profile"], preempted, contested, resolved)
 
             # Rebalance portfolio
             self._rebalance_portfolio()
@@ -1055,7 +1237,10 @@ class MultiStrategyBot(Strategy):
             if not decisions:
                 return
 
-            available_capital = self._get_available_capital(config.MAX_POSITION_SIZE)
+            # 2026-09-12: dashboard-editable (see /api/position-sizing-settings)
+            # -- config.MAX_POSITION_SIZE stays the fallback default only.
+            max_position_size = signal_logger.get_setting("max_position_size", config.MAX_POSITION_SIZE)
+            available_capital = self._get_available_capital(max_position_size)
 
             for symbol, action in decisions.items():
                 current_price = self.get_last_price(symbol)
@@ -1293,7 +1478,33 @@ class MultiStrategyBot(Strategy):
             # before this call, so it was never actually proof an order
             # went through.
             entry_order = self.create_order(symbol, position_size, side, time_in_force="day")
-            self.submit_order(entry_order)
+            try:
+                self.submit_order(entry_order)
+            except Exception as e:
+                # Some Alpaca-tradable symbols reject fractional quantities
+                # outright ("asset is not fractionable", e.g. TRAD.U,
+                # WLDSW) even though Alpaca supports fractional trading in
+                # general — confirmed live 2026-09-11, 300 repeated
+                # failures/~24min on just these two symbols, same failure
+                # every cycle since nothing ever adjusted the size. Retry
+                # once with a whole-share quantity rather than give up.
+                if "not fractionable" in str(e) and not isinstance(self.broker, InteractiveBrokers):
+                    whole_shares = float(int(position_size))
+                    if whole_shares <= 0:
+                        logger.warning(
+                            f"{symbol} is not fractionable and available capital "
+                            f"(${available_capital:.2f}) can't cover 1 whole share @ ${current_price:.2f}, skipping"
+                        )
+                        return
+                    logger.info(
+                        f"{symbol} is not fractionable, retrying with {whole_shares:.0f} whole share(s) "
+                        f"instead of {position_size:.4f}"
+                    )
+                    position_size = whole_shares
+                    entry_order = self.create_order(symbol, position_size, side, time_in_force="day")
+                    self.submit_order(entry_order)
+                else:
+                    raise
 
             # Alpaca can reject an order synchronously (e.g. invalid
             # symbol, insufficient buying power) — don't reserve capital or
@@ -1360,6 +1571,242 @@ class MultiStrategyBot(Strategy):
         except Exception as e:
             logger.error(f"Error handling canceled order: {e}")
 
+    def _reconcile_bracket_orders_from_broker(self):
+        """See the call site in initialize() for why this exists. Alpaca-
+        only (IB positions are reconciled separately by
+        ib_aux.reconcile_positions()) — no-op there. Best-effort: a
+        position that can't be matched to a resting stop order still gets
+        a BracketOrder entry (stop_loss_order_id stays None), so ownership/
+        exit logic still applies to it; it just won't have a resting stop
+        to cancel on close until the next _check_bracket_orders daily-
+        refresh submits one fresh. strategy_name is set to "unknown" (not
+        guessable from broker state alone) — matches on_filled_order's own
+        fallback label for the same "no real owner known" situation.
+        """
+        if isinstance(self.broker, InteractiveBrokers):
+            return
+        try:
+            positions = self.get_positions()
+            open_orders = self.get_orders(statuses=Order.ACTIVE_STATUSES)
+        except Exception as e:
+            logger.error(f"Could not reconcile bracket_orders from broker: {e}")
+            return
+
+        for position in positions:
+            symbol = position.symbol
+            quantity = position.quantity
+            if not quantity or symbol in self.bracket_orders:
+                continue
+            stop_order = next(
+                (o for o in open_orders
+                 if getattr(getattr(o, "asset", None), "symbol", None) == symbol
+                 and str(getattr(o, "side", "")).lower() == "sell"
+                 and getattr(o, "order_type", None) == Order.OrderType.STOP),
+                None,
+            )
+            entry_price = float(getattr(position, "avg_fill_price", None) or self.get_last_price(symbol) or 0)
+            if not entry_price:
+                logger.warning(f"Reconcile: no entry_price available for pre-existing position {symbol}, skipping")
+                continue
+            stop_price = float(stop_order.stop_price) if stop_order and getattr(stop_order, "stop_price", None) else None
+            bracket = BracketOrder(
+                symbol=symbol,
+                entry_price=entry_price,
+                quantity=quantity,
+                stop_loss_price=stop_price if stop_price else entry_price * (1 - config.STOP_LOSS_PERCENT),
+                take_profit_price=entry_price * (1 + config.TAKE_PROFIT_PERCENT),
+                strategy_name="unknown",
+                entry_time=self.get_datetime(),
+            )
+            bracket.status = "FILLED"
+            if stop_order:
+                bracket.stop_loss_order_id = getattr(stop_order, "identifier", None)
+                bracket.resting_stop_date = self.get_datetime().date()
+            self.bracket_orders[symbol] = bracket
+            logger.info(
+                f"Reconciled pre-existing position {symbol} x{quantity} into bracket_orders"
+                f"{' with existing resting stop' if stop_order else ' (no resting stop found — will get one on next daily refresh)'}"
+            )
+
+    def _submit_resting_stop_order(self, symbol: str, bracket: "BracketOrder", quantity: float):
+        """2026-09-11 safety net (explicit user request): puts the real
+        stop-loss price on Alpaca's own books as a genuine resting SELL
+        STOP order, not just something this bot's own software checks
+        each cycle -- so a lost connection or crashed process doesn't
+        leave a position with NO broker-side protection at all. See
+        BracketOrder.resting_stop_date's comment for why this is a lone
+        stop order (not a matched OCO stop+limit pair) and why it's
+        DAY-only. Alpaca-only (aux/IB-routed brackets, bracket.contract is
+        not None, are skipped -- that path has its own exit handling).
+        Fail-soft: logs and continues on any submission error rather than
+        blocking the entry fill itself."""
+        if bracket.contract is not None or not bracket.stop_loss_price or isinstance(self.broker, InteractiveBrokers):
+            return
+        try:
+            # 2026-09-11 fix, caught live before this ever ran for a real
+            # trade: dynamic exit prices (get_exit_levels()) are raw
+            # float results like zlow*0.999 -- almost never land on an
+            # exact cent. Alpaca rejects any sub-penny stop_price on a
+            # $1+ symbol outright ("sub-penny increment does not fulfill
+            # minimum pricing criteria", confirmed live) -- every resting
+            # stop for a dynamic-exit strategy would have silently failed
+            # (caught by this method's own except below, logged, entry
+            # fill unaffected) without this rounding. Alpaca's real tick
+            # rule: $0.01 increments at/above $1, $0.0001 below it.
+            tick_rounded_stop = round(bracket.stop_loss_price, 2 if bracket.stop_loss_price >= 1 else 4)
+            stop_order = self.create_order(
+                symbol, quantity, "sell", stop_price=tick_rounded_stop,
+                order_type="stop", time_in_force="day",
+            )
+            self.submit_order(stop_order)
+            bracket.stop_loss_order_id = getattr(stop_order, "identifier", None)
+            bracket.resting_stop_date = self.get_datetime().date()
+            logger.info(f"Resting stop order placed with Alpaca for {symbol} @ ${bracket.stop_loss_price:.2f}")
+        except Exception as e:
+            logger.error(f"Failed to place resting stop order for {symbol}: {e}")
+
+    def _cancel_resting_stop_order(self, symbol: str, bracket: "BracketOrder" = None):
+        """Cancel the resting stop order (see _submit_resting_stop_order)
+        before this bot's own software closes the position through any
+        other path (take-profit, a strategy SELL signal, time-limit,
+        news emergency stop, liquidation) -- otherwise the resting order
+        stays live with no shares behind it once we've already sold, and
+        could fire later against a position we no longer hold. Safe to
+        call even if no resting order exists or it already
+        filled/expired (fail-soft, same convention as every other
+        broker-call wrapper in this file)."""
+        bracket = bracket or self.bracket_orders.get(symbol)
+        if not bracket or not bracket.stop_loss_order_id:
+            return
+        try:
+            order_id = bracket.stop_loss_order_id
+            order = self.get_order(order_id)
+            if order:
+                self.cancel_order(order)
+                logger.info(f"Cancelled resting stop order for {symbol}")
+                # 2026-09-11 fix (found live, DLLL): Alpaca's cancel is
+                # async -- the shares this stop order held stay reported
+                # as "held_for_orders" for a brief moment after
+                # cancel_order() returns, not instantly. Submitting our
+                # own close sell immediately after this call routinely
+                # got rejected with "insufficient qty available"
+                # (requested == existing_qty, available: 0) even though
+                # the cancel had already been accepted. Poll briefly for
+                # the order to actually reach a terminal state before
+                # returning to the caller's own sell submission, instead
+                # of a blind fixed sleep -- most cancels confirm in well
+                # under 1s, so this rarely costs more than one poll.
+                for _ in range(6):
+                    time.sleep(0.5)
+                    refreshed = self.get_order(order_id)
+                    if not refreshed or str(getattr(refreshed, "status", "")).lower() in (
+                        "canceled", "cancelled", "expired", "filled", "rejected",
+                    ):
+                        break
+        except Exception as e:
+            logger.warning(f"Could not cancel resting stop order for {symbol} (may have already filled/expired): {e}")
+        finally:
+            bracket.stop_loss_order_id = None
+
+    def _check_priority_takeovers(self, all_decisions: Dict[str, Dict[str, str]], preempted: set):
+        """2026-09-12 (explicit user request): fixed-priority takeover of
+        an already-open position's EXIT MANAGEMENT ONLY -- never a
+        liquidation, never a re-entry. Same shares, same entry price, same
+        cost basis throughout; only which strategy owns it
+        (bracket.strategy_name) and its stop-loss/take-profit prices
+        change.
+
+        For each open position, find the highest config.STRATEGY_
+        PRIORITY_RANK strategy ranked ABOVE the current owner that has a
+        fresh BUY for this exact symbol this cycle (and wasn't itself
+        preempted by regime-precedence). If found, hand it over when
+        EITHER is true:
+          - the position is at most 1% below its entry price (covers
+            green positions and barely-red ones -- low stakes either way,
+            no reason to leave it with the lower-priority strategy), OR
+          - the contender's own fresh take-profit target for this symbol
+            (its real get_exit_levels() result this cycle if it has one,
+            else a synthetic target from its own configured take-profit %
+            applied to the current price) is a real move above the
+            current price -- i.e. this is a trade the contender would
+            want anyway, not an exit swap for its own sake.
+
+        Mechanics of the handover itself: cancel the old owner's resting
+        stop order (_cancel_resting_stop_order -- cancels only that
+        protective broker order, the equity position is untouched),
+        update the bracket's stop/target/strategy_name in place, then
+        submit a fresh resting stop at the new price
+        (_submit_resting_stop_order). Runs before regime-precedence's own
+        per-strategy order placement this same cycle -- see the call site
+        in on_trading_iteration.
+        """
+        try:
+            rank = {name: i for i, name in enumerate(config.STRATEGY_PRIORITY_RANK)}
+            for symbol, bracket in list(self.bracket_orders.items()):
+                if bracket.contract is not None:
+                    continue  # aux/IB-routed position -- different exit mechanism (ib_side_channel_trader.py), out of scope here
+                current_owner = bracket.strategy_name
+                if not current_owner or current_owner not in rank:
+                    continue
+                owner_rank = rank[current_owner]
+
+                contender = None
+                for name in config.STRATEGY_PRIORITY_RANK:
+                    if rank[name] >= owner_rank:
+                        break  # reached the current owner's own rank -- nothing past here outranks it
+                    if all_decisions.get(name, {}).get(symbol) == "BUY" and (name, symbol) not in preempted:
+                        contender = name
+                        break
+                if not contender:
+                    continue
+
+                current_price = self.get_last_price(symbol)
+                if not current_price:
+                    continue
+
+                drawdown_pct = (current_price - bracket.entry_price) / bracket.entry_price
+                takeover_ok = drawdown_pct >= -0.01
+
+                best_sl = best_tp = None
+                strategy_obj = getattr(self, contender, None)
+                get_levels = getattr(strategy_obj, "get_exit_levels", None)
+                if get_levels:
+                    levels = get_levels(symbol)
+                    if levels:
+                        best_sl, best_tp = levels
+                if best_tp is None:
+                    risk = signal_logger.get_strategy_risk(contender)
+                    best_tp = current_price * (1 + risk["take_profit_percent"])
+                    best_sl = current_price * (1 - risk["stop_loss_percent"])
+
+                if not takeover_ok:
+                    takeover_ok = best_tp is not None and best_tp > current_price
+                if not takeover_ok:
+                    continue
+
+                self._cancel_resting_stop_order(symbol, bracket)
+                old_owner = bracket.strategy_name
+                bracket.strategy_name = contender
+                if best_sl is not None:
+                    bracket.stop_loss_price = best_sl
+                bracket.take_profit_price = best_tp
+                position = self.get_position(symbol)
+                if position and position.quantity:
+                    self._submit_resting_stop_order(symbol, bracket, abs(position.quantity))
+                logger.info(
+                    f"Priority takeover: {symbol} handed from {old_owner} to {contender} "
+                    f"(drawdown={drawdown_pct * 100:+.2f}%, new stop=${bracket.stop_loss_price:.2f}, "
+                    f"new target=${bracket.take_profit_price:.2f})"
+                )
+                signal_logger.log_signal(
+                    contender, symbol, "TAKEOVER",
+                    {"reason": f"Priority takeover from {old_owner}", "drawdown_pct": drawdown_pct,
+                     "new_stop_loss_price": bracket.stop_loss_price, "new_take_profit_price": bracket.take_profit_price},
+                    entry_price=current_price, confirmed=True, timestamp=self.get_datetime(),
+                )
+        except Exception as e:
+            logger.error(f"Error in priority takeover check: {e}", exc_info=True)
+
     def on_filled_order(self, position, order, price, quantity, multiplier):
         """Lumibot lifecycle hook — fires with the REAL broker fill price
         (2026-09-03), unlike the signal-time reference price everything
@@ -1383,17 +1830,55 @@ class MultiStrategyBot(Strategy):
                 bracket = self.bracket_orders.get(symbol)
                 if bracket and bracket.entry_order_id == getattr(order, "identifier", None):
                     bracket.entry_price = price
+                    # 2026-09-11 fix, caught live on a real trade: `quantity`
+                    # here is only THIS fill EVENT's own size, not the
+                    # order's cumulative total -- a larger fractional order
+                    # routinely fills across several partial_fill events
+                    # before the final "fill" (confirmed live: HPQ's real
+                    # 7.05-share buy filled in 3 partial chunks, and
+                    # on_filled_order's `quantity` on the final event was
+                    # just the last chunk, 3.0 -- the resting stop this
+                    # method places would have covered only 3 of 7.05
+                    # shares, leaving most of the position with zero real
+                    # broker-side protection). get_position() reflects the
+                    # broker's own authoritative total instead.
+                    position = self.get_position(symbol)
+                    real_quantity = abs(position.quantity) if position else quantity
+                    self._submit_resting_stop_order(symbol, bracket, real_quantity)
                 return
 
             if side == "sell":
                 ctx = self._pending_trade_closes.pop(symbol, None)
                 if not ctx or ctx["entry_price"] is None:
-                    # No captured context (e.g. a position that was
-                    # already open before this process started, closed
-                    # with no bracket AND no broker avg_fill_price
-                    # available either) — nothing accurate to record,
-                    # skip rather than log a trade with a fabricated
-                    # entry price.
+                    # 2026-09-11: this sell fill wasn't initiated by this
+                    # bot's own software (_close_position always sets a
+                    # _pending_trade_closes entry BEFORE submitting) --
+                    # check whether it's the resting stop order itself
+                    # firing (see _submit_resting_stop_order) so that case
+                    # still gets a real closed-trade record instead of
+                    # silently vanishing from Performance Overview/Recent
+                    # Closed Trades. Genuinely no-context cases (a pre-
+                    # existing position from before this process started,
+                    # no bracket at all) still return with nothing logged.
+                    order_id = getattr(order, "identifier", None)
+                    bracket = self.bracket_orders.get(symbol)
+                    if bracket and bracket.stop_loss_order_id == order_id and bracket.entry_price:
+                        signal_logger.log_closed_trade(
+                            strategy=bracket.strategy_name or "unknown",
+                            symbol=symbol,
+                            entry_price=bracket.entry_price,
+                            exit_price=price,
+                            quantity=quantity,
+                            close_reason="stop_loss_resting_order",
+                            opened_at=bracket.entry_time,
+                            closed_at=self.get_datetime(),
+                            side_channel=False,
+                        )
+                        logger.warning(
+                            f"{symbol}'s resting stop order filled directly with the broker "
+                            f"(not via this bot's own software) — position closed, recorded as stop_loss_resting_order"
+                        )
+                        self.bracket_orders.pop(symbol, None)
                     return
                 # 2026-09-09 fix: was datetime.now() -- real wall-clock
                 # time, not the strategy's own clock. Harmless live (the
@@ -1446,6 +1931,21 @@ class MultiStrategyBot(Strategy):
                 if not current_price:
                     continue
 
+                # 2026-09-11: refresh the resting stop order once per
+                # trading day -- Alpaca rejects GTC for fractional stop
+                # orders (confirmed live), so the DAY order from
+                # _submit_resting_stop_order silently expires at 4pm ET
+                # and needs a fresh one each session this bot is up to
+                # place it. A position held across a day the bot never
+                # ran at all genuinely has no broker-side protection for
+                # that gap -- an Alpaca fractional-order limitation, not
+                # something fixable from here.
+                today = self.get_datetime().date()
+                if bracket.resting_stop_date != today and not isinstance(self.broker, InteractiveBrokers):
+                    position = self.get_position(symbol)
+                    if position and position.quantity:
+                        self._submit_resting_stop_order(symbol, bracket, abs(position.quantity))
+
                 # Per-strategy override (e.g. mean_reversion's sandbox-
                 # validated 10-day max hold, vs. the 5-day global default),
                 # stored as a plain "time_limit_days__{strategy}" key in
@@ -1495,6 +1995,164 @@ class MultiStrategyBot(Strategy):
 
         except Exception as e:
             logger.error(f"Error checking bracket orders: {e}")
+
+    # Minutes before the real 16:00 ET close that Friday pre-close
+    # handling begins -- ONE trigger for everything, per explicit user
+    # correction (2026-09-11, same day): don't pause entries at T-30 and
+    # then wait around until some later, separate time to start checking
+    # for green -- start both at the same T-30 mark. This also fixed the
+    # original bug on its own merits: the very first version fired the
+    # liquidation at exactly 16:00 ET, and by the time the per-symbol
+    # cancel-stop-then-sell sequence for all 4 real open positions
+    # actually reached the broker (16:00:43-16:00:46 ET), Alpaca's own
+    # clock (get_clock().is_open) had already flipped to closed --
+    # regular-hours DAY market orders submitted even a second late are
+    # unfillable until Monday's open. 30 minutes of buffer makes that
+    # failure mode essentially impossible regardless of how long the
+    # per-symbol processing takes.
+    FRIDAY_PRECLOSE_MINUTES = 30
+
+    def _check_friday_preclose_pause(self):
+        """Auto-pauses new entries at the Friday pre-close mark (see
+        FRIDAY_PRECLOSE_MINUTES) using the same signal_logger
+        "new_entries_paused" setting the dashboard's manual Pause New
+        Entries toggle uses — every entry call site already respects it;
+        exits stay fully active throughout.
+
+        self._friday_preclose_auto_paused (in-memory, not the DB
+        setting itself) tracks whether THIS mechanism was the one that
+        turned the pause on, so it can auto-resume on the next non-
+        Friday trading day without ever clobbering a pause the user set
+        manually themselves for an unrelated reason. Real wall-clock ET
+        time, not self.get_datetime() — same reasoning as the Friday
+        liquidation check right below."""
+        try:
+            now_et = datetime.now(ZoneInfo("America/New_York"))
+            pause_hour, pause_minute = 15, 60 - self.FRIDAY_PRECLOSE_MINUTES
+            in_preclose_window = now_et.weekday() == 4 and (now_et.hour, now_et.minute) >= (pause_hour, pause_minute)
+
+            if in_preclose_window:
+                if not self._friday_preclose_auto_paused and signal_logger.get_setting("new_entries_paused", 0.0) < 0.5:
+                    signal_logger.set_setting("new_entries_paused", 1.0)
+                    self._friday_preclose_auto_paused = True
+                    logger.info(
+                        f"Friday pre-close ({pause_hour:02d}:{pause_minute:02d} ET) — "
+                        f"new entries paused ahead of the Friday close"
+                    )
+            elif self._friday_preclose_auto_paused:
+                signal_logger.set_setting("new_entries_paused", 0.0)
+                self._friday_preclose_auto_paused = False
+                logger.info("Friday pre-close pause lifted — new entries resumed")
+        except Exception as e:
+            logger.error(f"Error in Friday pre-close pause check: {e}")
+
+    def _check_friday_close_liquidation(self):
+        """2026-09-11, explicit user request: at the Friday pre-close
+        mark (same FRIDAY_PRECLOSE_MINUTES threshold as
+        _check_friday_preclose_pause — user explicitly asked for these
+        to be the same trigger point, not two separate ones), sort every
+        open position: close it immediately if it's currently GREEN
+        (profitable), or hand it to the continuous watch in
+        self._friday_pending_green_liquidation / _check_pending_green_
+        liquidations if it's red — checked every iteration, any day,
+        however long it takes to turn green. Mirrors the deploy
+        workflow's own "pause + liquidate green only, leave red open"
+        pattern (see feedback_deploy_workflow_pause_liquidate_green
+        memory) — trading defined-loss discipline for weekend gap
+        protection on losers specifically; the user was told this
+        trade-off explicitly when asked for it.
+
+        Nothing did any Friday-close handling automatically before this:
+        Alpaca itself has no such built-in behavior (confirmed directly
+        with the user, who'd assumed otherwise), and this project's own
+        prior equivalent (config.MARKET_CLOSE_BUFFER_MINUTES / the
+        Friday-close-buffer logic in ib_side_channel_trader.py's
+        _minutes_until_close) only ever existed for the IB-only
+        international/forex layer, archived in the 2026-09-10 broker
+        migration -- it never covered plain US equities on Alpaca at all.
+
+        Uses the REAL wall-clock ET time (not self.get_datetime(), which
+        during a backtest would be simulated time far from any actual
+        Friday) -- this is a live-trading-only safety behavior, same
+        reasoning start_bot_cron.sh's own real-ET-clock check uses.
+        _friday_liquidation_date guards against re-triggering every
+        iteration for the rest of Friday evening once this has already
+        run today (re-sorting an already-flat/already-deferred account
+        is a harmless no-op either way, this is just to avoid spamming
+        the log and re-attempting a close that's already mid-fill)."""
+        try:
+            now_et = datetime.now(ZoneInfo("America/New_York"))
+            # Buffer must stay under 60 (keeps this a same-hour subtraction,
+            # no cross-hour minute-underflow handling needed).
+            trigger_hour, trigger_minute = 15, 60 - self.FRIDAY_PRECLOSE_MINUTES
+            if now_et.weekday() != 4 or (now_et.hour, now_et.minute) < (trigger_hour, trigger_minute):  # 4 = Friday
+                return
+            today = now_et.date()
+            if self._friday_liquidation_date == today:
+                return
+            self._friday_liquidation_date = today
+
+            positions = self.get_positions()
+            if not positions:
+                logger.info("Friday pre-close: no open positions to liquidate")
+                return
+
+            logger.info(
+                f"Friday pre-close reached ({trigger_hour:02d}:{trigger_minute:02d} ET, "
+                f"{self.FRIDAY_PRECLOSE_MINUTES}min before the real close) — "
+                f"liquidating profitable positions, deferring red ones until they turn green"
+            )
+            for position in positions:
+                symbol = position.symbol
+                bracket = self.bracket_orders.get(symbol)
+                if self._is_position_green(symbol, position, bracket):
+                    self._close_position(symbol, reason="friday_close")
+                    self.bracket_orders.pop(symbol, None)
+                else:
+                    self._friday_pending_green_liquidation.add(symbol)
+                    logger.info(f"Friday pre-close: {symbol} is red — deferring until it turns green")
+        except Exception as e:
+            logger.error(f"Error in Friday close liquidation check: {e}")
+
+    def _is_position_green(self, symbol: str, position, bracket: "BracketOrder" = None) -> bool:
+        """True if `symbol` is currently profitable. entry_price prefers
+        the tracked bracket (accurate even for a reconciled/pre-existing
+        position, see _reconcile_bracket_orders_from_broker), falling
+        back to the broker's own avg_fill_price the same way _close_
+        position's own fallback_entry does. direction handles the (rare,
+        this bot is long-only by design) short case the same way
+        _close_position's close_side already does."""
+        entry_price = (bracket.entry_price if bracket else None) or float(getattr(position, "avg_fill_price", None) or 0)
+        current_price = self.get_last_price(symbol)
+        if not entry_price or not current_price:
+            return False
+        direction = 1 if position.quantity >= 0 else -1
+        return (current_price - entry_price) * direction > 0
+
+    def _check_pending_green_liquidations(self):
+        """Positions the Friday pre-close liquidation deferred because
+        they were red (see _check_friday_close_liquidation) — checked
+        every iteration, any day of the week, and closed the moment each
+        one turns green, however long that takes. In-memory only
+        (self._friday_pending_green_liquidation), same known restart-
+        loses-it limitation as _friday_liquidation_date and every other
+        piece of Friday-liquidation state in this file."""
+        if not self._friday_pending_green_liquidation:
+            return
+        try:
+            for symbol in list(self._friday_pending_green_liquidation):
+                position = self.get_position(symbol)
+                if not position or not position.quantity:
+                    self._friday_pending_green_liquidation.discard(symbol)
+                    continue
+                bracket = self.bracket_orders.get(symbol)
+                if self._is_position_green(symbol, position, bracket):
+                    logger.info(f"{symbol} turned green — closing the deferred Friday liquidation")
+                    self._close_position(symbol, reason="friday_close_deferred_green")
+                    self.bracket_orders.pop(symbol, None)
+                    self._friday_pending_green_liquidation.discard(symbol)
+        except Exception as e:
+            logger.error(f"Error checking pending green liquidations: {e}")
 
     def _check_news_emergency_stop(self):
         """Portfolio-wide safety net (2026-09-01, user call): liquidate ANY
@@ -1642,6 +2300,12 @@ class MultiStrategyBot(Strategy):
             if needs_aux and self.ib_aux:
                 self.ib_aux._close_position(symbol, reason)
                 return symbol not in self.bracket_orders
+
+            # Cancel the resting stop order (see _submit_resting_stop_order)
+            # BEFORE submitting our own close below -- otherwise it stays
+            # live with no shares behind it once this sell fills, and
+            # could fire later against a position we no longer hold.
+            self._cancel_resting_stop_order(symbol, bracket)
 
             # Snapshot what on_filled_order will need to write a real
             # closed_trades record, BEFORE submitting the sell order —
@@ -1818,7 +2482,12 @@ class MultiStrategyBot(Strategy):
         try:
             enabled_categories = [
                 c for c in POD_ORDER_CATEGORIES
-                if signal_logger.is_strategy_enabled(f"pod_{c.lower()}")
+                # 2026-09-10: c in POD_MODULES added -- pods are IB-only
+                # (POD_MODULES is {} on a non-IB broker, see its own
+                # comment). DB toggles (pod_etf etc.) can still be ON from
+                # before the Alpaca-only move; without this check every
+                # cycle raised KeyError on POD_MODULES[c] below.
+                if c in POD_MODULES and signal_logger.is_strategy_enabled(f"pod_{c.lower()}")
             ]
             if not enabled_categories:
                 return
@@ -2185,6 +2854,11 @@ class MultiStrategyBot(Strategy):
                         logger.info(f"Liquidated (aux) {position.quantity}x {position.symbol}")
                         continue
 
+                    # Same reasoning as _close_position — cancel the
+                    # resting stop order before submitting our own sell
+                    # below, or it stays live with no shares behind it.
+                    self._cancel_resting_stop_order(position.symbol, bracket)
+
                     # Same closed_trades snapshot _close_position takes —
                     # this path bypasses _close_position entirely (submits
                     # the sell order directly), so without this, every
@@ -2273,17 +2947,77 @@ class MultiStrategyBot(Strategy):
             return 0.0
 
     def _get_available_capital(self, allocation_percent: float) -> float:
-        """Calculate available capital for a strategy.
+        """Calculate available capital for a strategy, IN USD.
+
+        2026-09-09, explicit user direction: this account's base currency
+        is GBP, but every symbol every strategy sizes through this method
+        for is a USD-priced US stock (all 8 core strategies now source
+        exclusively from regime_router.py's live STK.US.MAJOR scanner —
+        GBP-denominated LSE stocks are a completely separate system,
+        self.ib_aux, which never calls this method). GBP and USD are
+        real, SEPARATE balances on this account (confirmed live: USD
+        CashBalance was $0.00 for most of this session, independent of
+        whatever GBP showed) — sizing off the GBP-labeled buying_power
+        figure and dividing by a USD price (the old behavior) was a
+        genuine currency mismatch, not just a units/display issue. Fixed
+        by checking real USD cash directly instead of converting or
+        assuming. This return value now flows straight into
+        _place_bracket_order's `position_size = available_capital /
+        current_price` as USD/USD — dimensionally correct for the first
+        time.
 
         Args:
             allocation_percent: Percentage of portfolio to allocate
 
         Returns:
-            Available capital amount
+            Available capital amount, in USD
         """
         try:
-            portfolio_value = self.get_portfolio_value()
-            cash = self.get_cash()
+            connector = getattr(self, "pod_connector", None)
+            if connector is None:
+                # 2026-09-10: Alpaca-only move -- pod_connector is IB-only
+                # and is None on this broker (see its own ternary in
+                # initialize()). Alpaca's account is plain single-currency
+                # USD (no GBP/USD duality to resolve, unlike the IB path
+                # below), so this direct-cash path replaces it instead of
+                # returning 0.0 -- before this fix every strategy signal
+                # sized to zero and no order could ever place on Alpaca.
+                try:
+                    usd_cash = float(self.get_cash())
+                except (TypeError, ValueError):
+                    logger.warning("USD cash unavailable this cycle (broker sync issue), no capital allocated")
+                    return 0.0
+                portfolio_value = self.get_portfolio_value()
+                if portfolio_value is None:
+                    logger.warning("Portfolio value unavailable this cycle (broker sync issue), no capital allocated")
+                    return 0.0
+                min_cash_usd = portfolio_value * config.MIN_CASH_BUFFER
+                allocated_usd = portfolio_value * allocation_percent
+                reserved = sum(self._cycle_reservations.values())
+                available = min(allocated_usd, usd_cash - min_cash_usd - reserved)
+                # Same hard per-position ceiling as the IB path below,
+                # applied directly in USD -- Alpaca has no GBP leg to
+                # convert, and at this account's size the guardrail
+                # magnitude is what matters, not the exact FX rate (see
+                # HARD_POSITION_CEILING_GBP's own comment for the real
+                # $100,271 fill this protects against). 2026-09-12:
+                # dashboard-editable (see /api/position-sizing-settings) --
+                # config.HARD_POSITION_CEILING_GBP stays the fallback default.
+                hard_ceiling = signal_logger.get_setting("hard_position_ceiling_gbp", config.HARD_POSITION_CEILING_GBP)
+                available = min(available, hard_ceiling)
+                return max(0.0, available)
+            if not connector.connected:
+                connector.connect(connect_forex=True)  # see regime_router.py's own comment on why connect_forex=True even here
+            if not connector.connected:
+                logger.warning("IB connector not connected this cycle, no capital allocated")
+                return 0.0
+
+            usd_cash = connector.get_currency_cash_balance("USD")
+            if usd_cash is None:
+                logger.warning("USD cash balance unavailable this cycle (broker sync issue), no capital allocated")
+                return 0.0
+
+            portfolio_value = self.get_portfolio_value()  # still GBP (base currency) -- only used below to scale allocation_percent, converted to USD before comparing against real USD cash
             if portfolio_value is None:
                 # 2026-09-04: see _run_pod_strategies' matching comment —
                 # a transient broker-balance sync failure leaves this
@@ -2293,14 +3027,11 @@ class MultiStrategyBot(Strategy):
                 # just a known, harmless skip-this-cycle condition.
                 logger.warning("Portfolio value unavailable this cycle (broker sync issue), no capital allocated")
                 return 0.0
-            min_cash = portfolio_value * config.MIN_CASH_BUFFER
 
-            # Size against buying power (includes margin the broker actually
-            # extends), not raw cash — a cash-only cap can under-size or
-            # zero-out orders on a small account even when real purchasing
-            # power is higher. get_buying_power() falls back to cash on
-            # its own if the broker lookup fails.
-            buying_power = self.get_buying_power()
+            fx_rate = connector.convert_currency(1.0, "GBP", "USD", rate_cache=self._fx_rate_cache)
+            if fx_rate is None:
+                logger.warning("GBP/USD rate unavailable this cycle, no capital allocated")
+                return 0.0
 
             # 2026-09-09: sanity check, independent of HARD_POSITION_
             # CEILING_GBP below — that bounds the OUTPUT, this catches
@@ -2309,8 +3040,13 @@ class MultiStrategyBot(Strategy):
             # config.CAPITAL_SANITY_THRESHOLD_GBP's own comment and
             # project_100k_tsla_incident_and_hard_ceiling_fix memory —
             # this exact class of anomaly produced a real $100,271 fill
-            # on 2026-09-08 and went undetected for a full day.
-            for label, value in (("buying_power", buying_power), ("portfolio_value", portfolio_value)):
+            # on 2026-09-08 and went undetected for a full day. Checked
+            # against portfolio_value (still the GBP/base figure — the
+            # one that actually went anomalous in the original incident)
+            # and usd_cash (converted to GBP-equivalent for a like-for-
+            # like threshold comparison) rather than skipping the check
+            # just because sizing itself is now USD-based.
+            for label, value in (("usd_cash_gbp_equiv", usd_cash / fx_rate if fx_rate else None), ("portfolio_value", portfolio_value)):
                 if value is not None and value > config.CAPITAL_SANITY_THRESHOLD_GBP:
                     anomaly = {
                         "timestamp": self.get_datetime().isoformat(),
@@ -2327,24 +3063,34 @@ class MultiStrategyBot(Strategy):
                         f"still bounded by config.HARD_POSITION_CEILING_GBP, but this needs human review."
                     )
 
-            allocated = portfolio_value * allocation_percent
-            # Cap by buying power, still keeping the cash safety buffer —
-            # min_cash is subtracted from buying power too so a leveraged
-            # order never gets sized as if that cash cushion didn't exist.
-            # Also subtract capital already committed by other strategies
-            # earlier this same iteration (see _cycle_reservations) — their
-            # orders likely haven't filled yet, so buying_power alone would
-            # still look untouched.
+            min_cash_usd = (portfolio_value * config.MIN_CASH_BUFFER) * fx_rate
+            allocated_usd = (portfolio_value * allocation_percent) * fx_rate
+            # Cap by real USD cash, still keeping the cash safety buffer —
+            # min_cash is subtracted too so an order never gets sized as
+            # if that cushion didn't exist. Also subtract capital already
+            # committed by other strategies earlier this same iteration
+            # (see _cycle_reservations, itself USD-denominated since it's
+            # populated from this same method's return value) — their
+            # orders likely haven't filled yet, so usd_cash alone would
+            # still look untouched. No margin/buying-power multiplier
+            # here (unlike the old GBP-based version) — this account
+            # isn't reliably marginable below IB's $2,000 threshold (see
+            # project_ib_currency_and_scanner_findings_2026_09_09 memory),
+            # so sizing off real settled USD cash only is the safe
+            # assumption, not an approximation.
             reserved = sum(self._cycle_reservations.values())
-            available = min(allocated, buying_power - min_cash - reserved)
+            available = min(allocated_usd, usd_cash - min_cash_usd - reserved)
             # 2026-09-09: hard ceiling, independent of whatever IB
             # reports for buying_power/portfolio_value this cycle — see
             # config.HARD_POSITION_CEILING_GBP's own comment for the two
             # real live incidents (2026-09-03, 2026-09-08 — a real
             # $100,271 TSLA fill) this specifically guards against. A
             # percentage-of-portfolio cap alone doesn't help when the
-            # portfolio figure itself is briefly wrong.
-            available = min(available, config.HARD_POSITION_CEILING_GBP)
+            # portfolio figure itself is briefly wrong. Converted to USD
+            # once here (fx_rate) since `available` is USD now — the
+            # config constant itself stays GBP-denominated/named, only
+            # this comparison changes.
+            available = min(available, config.HARD_POSITION_CEILING_GBP * fx_rate)
             return max(0, available)
 
         except Exception as e:
