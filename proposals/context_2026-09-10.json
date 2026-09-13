@@ -1,0 +1,807 @@
+{
+  "date": "2026-09-10",
+  "generated_at": "2026-09-10T13:40:01.808190",
+  "recent_signals_24h": [
+    {
+      "timestamp": "2026-09-10T05:46:20.401874-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.72
+    },
+    {
+      "timestamp": "2026-09-10T05:46:20.344295-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:46:20.106388-04:00",
+      "strategy_name": "scalping",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:46:19.977971-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:46:19.827415-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.72
+    },
+    {
+      "timestamp": "2026-09-10T05:46:19.720796-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.72
+    },
+    {
+      "timestamp": "2026-09-10T05:46:19.595980-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:45:20.674070-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:45:20.601260-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.67
+    },
+    {
+      "timestamp": "2026-09-10T05:45:20.201994-04:00",
+      "strategy_name": "scalping",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:45:20.134237-04:00",
+      "strategy_name": "scalping",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.67
+    },
+    {
+      "timestamp": "2026-09-10T05:45:19.994953-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.67
+    },
+    {
+      "timestamp": "2026-09-10T05:45:19.882187-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.72
+    },
+    {
+      "timestamp": "2026-09-10T05:45:19.750602-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:45:19.638341-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:44:20.308776-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:44:20.245448-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.63
+    },
+    {
+      "timestamp": "2026-09-10T05:44:19.779109-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.63
+    },
+    {
+      "timestamp": "2026-09-10T05:44:19.689846-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.79
+    },
+    {
+      "timestamp": "2026-09-10T05:44:19.573389-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:44:19.432605-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:43:20.745487-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.72
+    },
+    {
+      "timestamp": "2026-09-10T05:43:20.683077-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.6
+    },
+    {
+      "timestamp": "2026-09-10T05:43:20.249285-04:00",
+      "strategy_name": "scalping",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:43:20.120250-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.6
+    },
+    {
+      "timestamp": "2026-09-10T05:43:20.005994-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.79
+    },
+    {
+      "timestamp": "2026-09-10T05:43:19.886335-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.72
+    },
+    {
+      "timestamp": "2026-09-10T05:43:19.766943-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:42:21.126019-04:00",
+      "strategy_name": "market_profile",
+      "symbol": "PLTD",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.34
+    },
+    {
+      "timestamp": "2026-09-10T05:42:20.748068-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.72
+    },
+    {
+      "timestamp": "2026-09-10T05:42:20.674307-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.61
+    },
+    {
+      "timestamp": "2026-09-10T05:42:20.279917-04:00",
+      "strategy_name": "scalping",
+      "symbol": "BATL",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.37
+    },
+    {
+      "timestamp": "2026-09-10T05:42:19.922998-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.61
+    },
+    {
+      "timestamp": "2026-09-10T05:42:19.810556-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.8
+    },
+    {
+      "timestamp": "2026-09-10T05:42:19.659617-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.72
+    },
+    {
+      "timestamp": "2026-09-10T05:42:19.554918-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:41:20.940086-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.72
+    },
+    {
+      "timestamp": "2026-09-10T05:41:20.875403-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.65
+    },
+    {
+      "timestamp": "2026-09-10T05:41:20.079388-04:00",
+      "strategy_name": "scalping",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.8
+    },
+    {
+      "timestamp": "2026-09-10T05:41:19.944532-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.65
+    },
+    {
+      "timestamp": "2026-09-10T05:41:19.797951-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.8
+    },
+    {
+      "timestamp": "2026-09-10T05:41:19.676549-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.72
+    },
+    {
+      "timestamp": "2026-09-10T05:41:19.560309-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:40:26.443138-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:40:26.367814-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.65
+    },
+    {
+      "timestamp": "2026-09-10T05:40:25.376522-04:00",
+      "strategy_name": "scalping",
+      "symbol": "BATL",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.37
+    },
+    {
+      "timestamp": "2026-09-10T05:40:25.259260-04:00",
+      "strategy_name": "scalping",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:40:25.121055-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.65
+    },
+    {
+      "timestamp": "2026-09-10T05:40:25.008382-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.8
+    },
+    {
+      "timestamp": "2026-09-10T05:40:24.885755-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:40:24.792296-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:39:26.349074-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:39:26.284470-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.65
+    },
+    {
+      "timestamp": "2026-09-10T05:39:25.296572-04:00",
+      "strategy_name": "scalping",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.65
+    },
+    {
+      "timestamp": "2026-09-10T05:39:25.168120-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.65
+    },
+    {
+      "timestamp": "2026-09-10T05:39:25.047511-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.8
+    },
+    {
+      "timestamp": "2026-09-10T05:39:24.937732-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:39:24.799158-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:38:20.513127-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:38:20.447183-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.65
+    },
+    {
+      "timestamp": "2026-09-10T05:38:19.946602-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.65
+    },
+    {
+      "timestamp": "2026-09-10T05:38:19.832246-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.8
+    },
+    {
+      "timestamp": "2026-09-10T05:38:19.677934-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:38:19.554860-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:37:20.735902-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:37:20.666197-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:37:20.322630-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "AMD",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 518.02
+    },
+    {
+      "timestamp": "2026-09-10T05:37:20.037223-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:37:19.925845-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.8
+    },
+    {
+      "timestamp": "2026-09-10T05:37:19.804427-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:37:19.685920-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:36:20.531470-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:36:20.435303-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.72
+    },
+    {
+      "timestamp": "2026-09-10T05:36:20.114683-04:00",
+      "strategy_name": "scalping",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:36:20.047164-04:00",
+      "strategy_name": "scalping",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.72
+    },
+    {
+      "timestamp": "2026-09-10T05:36:19.911127-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.72
+    },
+    {
+      "timestamp": "2026-09-10T05:36:19.788616-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.8
+    },
+    {
+      "timestamp": "2026-09-10T05:36:19.677357-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:36:19.558205-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:35:18.961921-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:35:18.897295-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.69
+    },
+    {
+      "timestamp": "2026-09-10T05:35:18.547130-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.69
+    },
+    {
+      "timestamp": "2026-09-10T05:35:18.424973-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.8
+    },
+    {
+      "timestamp": "2026-09-10T05:35:18.310322-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:35:18.192941-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:34:24.767056-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:34:24.604329-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:34:24.040290-04:00",
+      "strategy_name": "scalping",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:34:23.912346-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:34:23.800151-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.81
+    },
+    {
+      "timestamp": "2026-09-10T05:34:23.687824-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:34:23.570141-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    },
+    {
+      "timestamp": "2026-09-10T05:33:19.661056-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:33:19.626526-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:33:18.580512-04:00",
+      "strategy_name": "scalping",
+      "symbol": "BATL",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.37
+    },
+    {
+      "timestamp": "2026-09-10T05:33:18.471882-04:00",
+      "strategy_name": "scalping",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:33:18.365809-04:00",
+      "strategy_name": "momentum",
+      "symbol": "PCLA",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.68
+    },
+    {
+      "timestamp": "2026-09-10T05:33:18.243328-04:00",
+      "strategy_name": "momentum",
+      "symbol": "SUNE",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 3.81
+    },
+    {
+      "timestamp": "2026-09-10T05:33:18.121295-04:00",
+      "strategy_name": "momentum",
+      "symbol": "BNC",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.73
+    },
+    {
+      "timestamp": "2026-09-10T05:33:18.005199-04:00",
+      "strategy_name": "momentum",
+      "symbol": "GPRO",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 1.36
+    }
+  ],
+  "note": "Read via direct SQLite access to signals.db -- works whether or not the live bot process is currently running. If recent_signals_24h is empty, either the bot hasn't run recently or the pods (pod_stock/pod_etf) haven't fired yet -- not necessarily an error."
+}

@@ -1,0 +1,6 @@
+{
+  "date": "2026-09-08",
+  "generated_at": "2026-09-08T13:40:01.964116",
+  "recent_signals_24h": [],
+  "note": "Read via direct SQLite access to signals.db -- works whether or not the live bot process is currently running. If recent_signals_24h is empty, either the bot hasn't run recently or the pods (pod_stock/pod_etf) haven't fired yet -- not necessarily an error."
+}

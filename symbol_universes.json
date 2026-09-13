@@ -1,0 +1,81 @@
+{
+  "scalping": [
+    "MU",
+    "SPY",
+    "QQQ",
+    "NVDA",
+    "AAPL",
+    "SPCX",
+    "MSFT",
+    "TSLA",
+    "AMD",
+    "INTC"
+  ],
+  "breakout": [
+    "TSLA",
+    "AAPL",
+    "MSFT",
+    "MU",
+    "SPY",
+    "QQQ",
+    "NVDA",
+    "SPCX",
+    "AMD",
+    "INTC"
+  ],
+  "mean_reversion": [
+    "GLD",
+    "AAPL",
+    "MSFT",
+    "JPM",
+    "MU",
+    "NVDA",
+    "SPCX",
+    "TSLA",
+    "USO",
+    "AMD",
+    "INTC"
+  ],
+  "vwap": [
+    "NVDA",
+    "TSLA",
+    "GLD",
+    "AAPL",
+    "MSFT",
+    "QQQ",
+    "JPM",
+    "SPY",
+    "DIA",
+    "MU",
+    "USO",
+    "AMC"
+  ],
+  "gap_and_go": [
+    "AAPL",
+    "NVDA",
+    "TSLA",
+    "MU",
+    "SPY",
+    "QQQ",
+    "SPCX",
+    "MSFT",
+    "AMD",
+    "INTC"
+  ],
+  "reversal": [
+    "AAPL",
+    "MSFT",
+    "TSLA",
+    "NVDA",
+    "JPM",
+    "MU",
+    "SPY",
+    "QQQ",
+    "SPCX",
+    "AMD",
+    "GME",
+    "USO",
+    "GLD",
+    "AMC"
+  ]
+}

@@ -1,740 +1,931 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lumibot Trading Dashboard</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: #333;
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            color: #1e3c72;
-            font-size: 28px;
-        }
-
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .status-badge.trading {
-            background: #4ade80;
-            color: white;
-        }
-
-        .status-badge.stopped {
-            background: #ef4444;
-            color: white;
-        }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-        }
-
-        button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            transition: all 0.3s ease;
-        }
-
-        .btn-start {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-start:hover {
-            background: #059669;
-        }
-
-        .btn-start:disabled {
-            background: #9ca3af;
-            cursor: not-allowed;
-        }
-
-        .btn-stop {
-            background: #ef4444;
-            color: white;
-        }
-
-        .btn-stop:hover {
-            background: #dc2626;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .card-title {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .card-value {
-            font-size: 28px;
-            font-weight: bold;
-            color: #1e3c72;
-        }
-
-        .card-subtext {
-            font-size: 12px;
-            color: #999;
-            margin-top: 8px;
-        }
-
-        .table-card {
-            grid-column: 1 / -1;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        thead {
-            background: #f3f4f6;
-        }
-
-        th {
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-            color: #374151;
-            border-bottom: 2px solid #e5e7eb;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        tbody tr:hover {
-            background: #f9fafb;
-        }
-
-        .positive {
-            color: #10b981;
-        }
-
-        .negative {
-            color: #ef4444;
-        }
-
-        .chart-container {
-            grid-column: 1 / -1;
-        }
-
-        .loading {
-            text-align: center;
-            color: #999;
-            padding: 40px;
-            font-size: 16px;
-        }
-
-        .timestamp {
-            font-size: 12px;
-            color: #999;
-            text-align: right;
-            margin-top: 10px;
-        }
-
-        .alert {
-            padding: 12px 16px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .alert-info {
-            background: #dbeafe;
-            color: #1e40af;
-            border-left: 4px solid #3b82f6;
-        }
-
-        .alert-warning {
-            background: #fef3c7;
-            color: #92400e;
-            border-left: 4px solid #f59e0b;
-        }
-
-        .alert-success {
-            background: #dcfce7;
-            color: #166534;
-            border-left: 4px solid #22c55e;
-        }
-
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border-left: 4px solid #ef4444;
-        }
-
-        footer {
-            text-align: center;
-            color: rgba(255,255,255,0.7);
-            margin-top: 40px;
-            font-size: 12px;
-        }
-
-        .refresh-indicator {
-            font-size: 11px;
-            color: #999;
-            display: inline-block;
-            margin-left: 10px;
-        }
-
-        .blinking {
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.3; }
-        }
-
-        .bt-field label {
-            font-size: 12px;
-            color: #666;
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .bt-field input {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .bt-controls {
-            display: flex;
-            gap: 10px;
-            align-items: end;
-            flex-wrap: wrap;
-            margin-top: 15px;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Lumibot Trading Dashboard</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,"Segoe UI",Arial,sans-serif;background:#f5f7fb;color:#172033;min-height:100vh}.app-shell{display:flex;min-height:100vh}.sidebar{width:220px;flex:0 0 220px;background:linear-gradient(180deg,#071b48,#062a72);color:#fff;padding:18px 12px;position:sticky;top:0;height:100vh;overflow-y:auto}.brand{display:flex;align-items:center;gap:10px;padding:5px 8px 22px}.brand-mark{width:38px;height:38px;border-radius:12px;background:#1768e5;display:grid;place-items:center;font-size:21px}.brand strong{display:block;font-size:18px}.brand span{display:block;color:#b9c9e9;font-size:10px;margin-top:2px}.sidebar nav{display:grid;gap:4px}.nav-item{border:0;background:transparent;color:#d9e4ff;text-align:left;padding:10px 11px;border-radius:7px;font-size:13px;display:flex;gap:11px;align-items:center;cursor:pointer;width:100%}.nav-item.active,.nav-item:hover{background:#155ed0;color:#fff}.sidebar-card{border:1px solid rgba(255,255,255,.13);border-radius:8px;padding:13px;margin-top:16px}.small-label{font-size:10px;color:#aebfdf;font-weight:700;letter-spacing:.7px;margin-bottom:10px}.connection{font-size:11px;color:#6ee7a0;margin-bottom:14px}.connection i,.auto i{display:inline-block;width:7px;height:7px;border-radius:50%;background:#16c96b;margin-right:5px}.side-row{display:flex;justify-content:space-between;font-size:11px;margin-top:10px;color:#bdcbe4}.side-row b{color:#fff}.side-row .ok{color:#63e99b}.quick-actions{margin-top:14px}.action{width:100%;padding:9px;border-radius:5px;margin-top:8px;border:1px solid rgba(255,255,255,.25);color:#fff;font-weight:700;cursor:pointer}.action.start{background:#087d55}.action.stop{background:#d72c3c}.action.pause{background:#1769db}.action.pause.active{background:#8a95a6}.liquidate-btn{border:1px solid #f3b8bd;background:#fee8ea;color:#c52e3b;font-size:9px;font-weight:700;padding:5px 9px;border-radius:5px;cursor:pointer}.liquidate-btn:hover{background:#fcd4d8}.action.test{background:#5b3fd9}.action.test:disabled{background:#3a3f52;color:#8a95a6;cursor:not-allowed;opacity:.6}.action.test.running{background:#8752d8;animation:test-pulse 1.2s ease-in-out infinite}@keyframes test-pulse{0%,100%{opacity:1}50%{opacity:.65}}.main{flex:1;padding:20px 24px;min-width:0}.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:17px;flex-wrap:wrap;gap:10px}.topbar h1{font-size:24px}.topbar p{font-size:12px;color:#7c879b;margin-top:4px}.top-actions{display:flex;gap:14px;align-items:center;color:#68758b;font-size:12px;flex-wrap:wrap}.auto{color:#4f637c}.status{padding:9px 14px;border-radius:22px;font-weight:800;font-size:11px}.status.trading{background:#dcfce9;color:#16814b}.status.stopped{background:#fee8ea;color:#c52e3b}.severity-badge{padding:3px 9px;border-radius:12px;font-weight:800;font-size:9px;text-transform:uppercase}.severity-badge.critical{background:#fee8ea;color:#c52e3b}.severity-badge.info{background:#e5edff;color:#1769db}.metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:13px;margin-bottom:14px}.metric,.card{background:#fff;border:1px solid #e8ecf3;border-radius:9px;box-shadow:0 2px 10px rgba(25,45,80,.045)}.metric{padding:14px;position:relative;min-height:104px}.metric-icon{width:31px;height:31px;border-radius:9px;background:#e8f0ff;color:#1466d9;display:grid;place-items:center;float:left;margin-right:10px}.metric-icon.green{background:#e3f8ec;color:#15955b}.metric-icon.purple{background:#f0e8ff;color:#8752d8}.metric-icon.orange{background:#fff0dd;color:#ee8a18}.metric-icon.blue{background:#e5edff;color:#245fd3}.metric label{display:block;color:#7b8798;font-size:10px;text-transform:uppercase;font-weight:700;padding-top:2px}.metric strong{display:block;font-size:19px;margin-top:8px}.metric small{display:block;color:#8994a6;font-size:10px;margin-top:5px}.positive{color:#11965a}.negative{color:#dc3545}.grid{display:grid;gap:13px;margin-bottom:13px}.grid-middle{grid-template-columns:1.45fr 1.1fr}.card{padding:14px;min-width:0}.card-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}.card-head h2,.advanced h2{font-size:13px}.card-head span,.muted{display:block;font-size:10px;color:#8994a6;margin-top:4px}.link-btn{border:0;background:none;color:#1769db;font-size:10px;cursor:pointer}.coming-soon{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:36px 10px;color:#98a2b2;text-align:center}.coming-soon .icon{font-size:26px;opacity:.5}.coming-soon b{font-size:11px;color:#7b8798}.coming-soon span{font-size:9px;max-width:220px}table{width:100%;border-collapse:collapse;font-size:9px}th{color:#7b8798;text-align:left;font-weight:700;background:#fafbfc;padding:8px 5px;border-bottom:1px solid #e8ecf3}td{padding:8px 5px;border-bottom:1px solid #eef1f5;white-space:nowrap}tbody tr:last-child td{border-bottom:0}.empty{text-align:center;color:#98a2b2;padding:20px}.table-scroll{overflow:auto}.card dl{font-size:10px}.card dl div{display:flex;justify-content:space-between;padding:5px 0}.card dt{color:#758196}.card dd{font-weight:700;text-align:right}.ok{color:#15955b}.advanced{margin-bottom:15px}.advanced-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}.advanced-grid>div{border:1px solid #edf0f5;border-radius:7px;padding:12px}.toggle-groups{margin-top:6px}.toggle-group{margin-top:14px}.toggle-group:first-child{margin-top:0}.toggle-group-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#7b8798;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #edf0f5}.toggle-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.toggle{display:flex;align-items:center;gap:10px;border:1px solid #e1e6ee;border-radius:6px;padding:8px 10px;font-size:10px}.toggle input,.switch-row input{accent-color:#1769db}.inline-control{display:flex;align-items:center;gap:8px;font-size:10px;color:#6f7b8e;margin:10px 0}.inline-control input{border:1px solid #dfe5ee;border-radius:5px;background:#fff;padding:6px 9px;font-size:10px;color:#4c596d}.switch-row{display:block;font-size:10px;margin:12px 0}#alerts-container{position:fixed;right:20px;top:20px;width:300px;z-index:50}.toast{padding:11px 13px;border-radius:7px;background:#fff;box-shadow:0 8px 25px rgba(0,0,0,.15);border-left:4px solid #1769db;margin-bottom:8px;font-size:11px}.toast.success{border-color:#15955b}.toast.warning{border-color:#e99a20}.toast.error{border-color:#dc3545}footer{text-align:center;color:#98a2b2;font-size:9px;padding:8px}@media(max-width:1200px){.sidebar{width:190px;flex-basis:190px}.metrics{grid-template-columns:repeat(2,1fr)}.grid-middle{grid-template-columns:1fr}}@media(max-width:850px){.sidebar{display:none}.main{padding:12px}.metrics,.grid-middle,.advanced-grid{grid-template-columns:1fr}.topbar{align-items:flex-start;flex-direction:column}}.account-mode{display:flex;align-items:center;border:1px solid #dfe5ee;background:#fff;border-radius:7px;padding:3px;gap:2px}.mode-label{font-size:8px;font-weight:800;color:#8a95a6;padding:0 5px}.mode-btn{border:0;background:transparent;color:#6e7b90;font-size:9px;font-weight:800;padding:6px 8px;border-radius:5px;cursor:pointer}.mode-btn.active.live{background:#fde3e3;color:#c52e3b}.mode-btn.active.paper{background:#e5efff;color:#1769db}.modal-backdrop{position:fixed;inset:0;background:rgba(10,20,40,.5);display:none;align-items:center;justify-content:center;z-index:100}.modal-backdrop.open{display:flex}.modal{background:#fff;border-radius:10px;padding:22px;width:340px;max-width:92vw}.modal h3{font-size:15px;margin-bottom:6px}.modal p{font-size:11px;color:#7b8798;margin-bottom:14px}.modal label{display:block;font-size:10px;color:#4c596d;margin-top:10px;margin-bottom:4px;font-weight:700}.modal input{width:100%;padding:9px;border:1px solid #dfe5ee;border-radius:6px;font-size:12px}.modal-actions{display:flex;gap:8px;margin-top:18px}.modal-actions button{flex:1;padding:10px;border-radius:6px;border:0;font-weight:700;cursor:pointer;font-size:11px}.modal-actions .cancel{background:#f0f2f6;color:#4c596d}.modal-actions .save{background:#1769db;color:#fff}.live-banner{background:#fff4e5;border:1px solid #ffd699;color:#8a5a00;font-size:10px;padding:8px 12px;border-radius:6px;margin-top:8px}
+  </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div>
-                <h1>🤖 Lumibot Trading Bot</h1>
-                <p style="color: #999; font-size: 13px; margin-top: 5px;">Multi-Strategy Trading Dashboard</p>
-            </div>
-            <div style="text-align: right;">
-                <div id="status-container" style="margin-bottom: 15px;">
-                    <span class="status-badge stopped" id="status-badge">CONNECTING...</span>
-                    <span class="refresh-indicator" id="refresh-indicator"></span>
-                </div>
-                <div class="controls">
-                    <button class="btn-start" id="btn-start" onclick="startBot()">▶ START</button>
-                    <button class="btn-stop" id="btn-stop" onclick="stopBot()">⏹ STOP</button>
-                </div>
-            </div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">🤖</div>
+        <div><strong>Lumibot</strong><span>Trading Dashboard</span></div>
+      </div>
+
+      <nav>
+        <button class="nav-item active" data-target="overview">▣ <span>Overview</span></button>
+        <button class="nav-item" data-target="positions">⇄ <span>Positions</span></button>
+        <button class="nav-item" data-target="orders">▤ <span>Orders</span></button>
+        <button class="nav-item" data-target="advanced">◈ <span>Strategies</span></button>
+        <button class="nav-item" data-target="account">♙ <span>Account</span></button>
+        <button class="nav-item" data-soon="Performance analytics">⌁ <span>Performance</span></button>
+        <button class="nav-item" data-soon="Backtesting UI">▣ <span>Backtesting</span></button>
+        <button class="nav-item" data-soon="Log viewer">≡ <span>Logs</span></button>
+        <button class="nav-item" data-target="alerts">♧ <span>Alerts</span></button>
+        <button class="nav-item" data-soon="Reports">▥ <span>Reports</span></button>
+      </nav>
+
+      <div class="sidebar-card">
+        <div class="small-label">BOT STATUS</div>
+        <div id="side-connection" class="connection"><i></i> CONNECTING</div>
+        <div class="side-row"><span>API</span><b class="ok">● OK</b></div>
+      </div>
+
+      <div class="sidebar-card quick-actions">
+        <div class="small-label">QUICK ACTIONS</div>
+        <button class="action start" onclick="startBot()">▷ Start Trading</button>
+        <button class="action stop" onclick="stopBot()">□ Stop Trading</button>
+        <button class="action pause" id="pause-new-entries-btn" onclick="togglePauseNewEntriesBtn()">⏸ Pause New Entries</button>
+        <button class="action test" id="test-all-strategies-btn" onclick="runTestAllStrategies()" disabled title="Pause new entries first">🧪 Test All Strategies</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="section-title">Overview</h1>
+          <p>Monitor your trading bot performance in real-time</p>
         </div>
-
-        <!-- Alerts -->
-        <div id="alerts-container"></div>
-
-        <!-- Stats Grid -->
-        <div class="grid" id="stats-grid">
-            <div class="card">
-                <div class="card-title">Portfolio Value</div>
-                <div class="card-value" id="portfolio-value">$0.00</div>
-                <div class="card-subtext" id="portfolio-subtext"></div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">Available Cash</div>
-                <div class="card-value" id="cash-value">$0.00</div>
-                <div class="card-subtext">Buying Power</div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">Open Positions</div>
-                <div class="card-value" id="positions-count">0</div>
-                <div class="card-subtext">Active Trades</div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">Open Orders</div>
-                <div class="card-value" id="orders-count">0</div>
-                <div class="card-subtext">Pending Execution</div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">Bracket Orders</div>
-                <div class="card-value" id="bracket-count">0</div>
-                <div class="card-subtext">Stop-Loss & Take-Profit</div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">Last Update</div>
-                <div class="card-value" id="last-update" style="font-size: 16px;">--:--:--</div>
-                <div class="card-subtext" id="update-status">Waiting for data...</div>
-            </div>
+        <div class="top-actions">
+          <span id="clock">—</span>
+          <div class="account-mode">
+            <span class="mode-label">ACCOUNT</span>
+            <button id="mode-paper" class="mode-btn active paper" onclick="setTradingMode('paper')">PAPER</button>
+            <button id="mode-live" class="mode-btn" onclick="setTradingMode('live')">LIVE</button>
+          </div>
+          <div id="status-badge" class="status stopped">● STOPPED</div>
         </div>
+      </header>
 
-        <!-- Positions Table -->
-        <div class="card table-card">
-            <div class="card-title">📊 Open Positions</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Quantity</th>
-                        <th>Entry Price</th>
-                        <th>Current Price</th>
-                        <th>Unrealized P&L</th>
-                        <th>P&L %</th>
-                    </tr>
-                </thead>
-                <tbody id="positions-table">
-                    <tr>
-                        <td colspan="6" class="loading">No positions yet</td>
-                    </tr>
-                </tbody>
-            </table>
+      <div id="live-mode-banner" class="live-banner" style="display:none">
+        ⚠️ LIVE mode selected — this only stores your selection and (if entered) IBKR live credentials. It does <strong>not</strong> route any real trades yet; live execution isn't implemented. Switch back to PAPER any time.
+      </div>
+
+      <div id="alerts-container"></div>
+
+      <section id="overview" class="metrics">
+        <div class="metric"><span class="metric-icon">▣</span><label>Portfolio Value</label><strong id="portfolio-value">$0.00</strong><small id="portfolio-subtext">Available: $0.00</small></div>
+        <div class="metric"><span class="metric-icon blue">◈</span><label>Open Positions</label><strong id="positions-count">0</strong><small>Active trades</small></div>
+        <div class="metric"><span class="metric-icon orange">✣</span><label>Open Orders</label><strong id="orders-count">0</strong><small>Pending execution</small></div>
+        <div class="metric"><span class="metric-icon purple">▧</span><label>Bracket Orders</label><strong id="bracket-count">0</strong><small>Stop-loss &amp; take-profit</small></div>
+        <div class="metric"><span class="metric-icon green">$</span><label>Today's P&amp;L</label><strong id="perf-today-pnl">$0.00</strong><small id="perf-today-subtext">No closed trades yet today</small></div>
+      </section>
+
+      <section class="grid grid-middle">
+        <article class="card">
+          <div class="card-head"><div><h2>Equity Curve</h2><span>Portfolio value over time</span></div></div>
+          <div class="coming-soon"><span class="icon">📈</span><b>Coming soon</b><span>Needs a portfolio-value history endpoint — not built yet.</span></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><div><h2>Strategy Performance</h2><span>Realized P&amp;L &amp; win rate by strategy</span></div></div>
+          <div class="table-scroll"><table><thead><tr><th>Strategy</th><th>Trades</th><th>P&amp;L</th><th>Win Rate</th></tr></thead><tbody id="strategy-performance-table"><tr><td colspan="4" class="empty">No closed trades yet</td></tr></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="positions" class="grid">
+        <article class="card">
+          <div class="card-head"><h2>Open Positions</h2></div>
+          <div class="table-scroll"><table><thead><tr><th>Symbol</th><th>Quantity</th><th>Entry Price</th><th>Current Price</th><th>Profit</th><th>Action</th></tr></thead><tbody id="positions-table"><tr><td colspan="6" class="empty">No positions yet</td></tr></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="closed-orders" class="grid">
+        <article class="card">
+          <div class="card-head"><div><h2>Recent Closed Orders</h2><span>Entry vs. exit price and realized P&amp;L for each closed trade</span></div></div>
+          <div class="table-scroll"><table><thead><tr><th>Symbol</th><th>Strategy</th><th>Entry Price</th><th>Exit Price</th><th>P&amp;L</th><th>Closed By</th><th>Closed At</th></tr></thead><tbody id="closed-orders-table"><tr><td colspan="7" class="empty">No closed trades yet</td></tr></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="orders" class="grid grid-middle">
+        <article class="card">
+          <div class="card-head"><h2>Recent Orders</h2></div>
+          <div class="table-scroll"><table><thead><tr><th>Order ID</th><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Status</th><th>Filled</th><th>Time</th></tr></thead><tbody id="orders-table"><tr><td colspan="8" class="empty">No orders yet</td></tr></tbody></table></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>Bracket Orders</h2><span>Stop-loss &amp; take-profit</span></div>
+          <div class="table-scroll"><table><thead><tr><th>Symbol</th><th>Entry</th><th>Stop</th><th>Target</th><th>Status</th></tr></thead><tbody id="bracket-table"><tr><td colspan="5" class="empty">No bracket orders yet</td></tr></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="account" class="grid grid-middle">
+        <article class="card account">
+          <div class="card-head"><div><h2>Account Summary</h2><span id="account-mode-text">Account mode: PAPER TRADING</span></div></div>
+          <dl>
+            <div><dt>Broker</dt><dd>Interactive Brokers</dd></div>
+            <div><dt>Base Currency</dt><dd id="account-currency">—</dd></div>
+            <div><dt>Portfolio Value</dt><dd id="account-total">$0.00</dd></div>
+            <div><dt>Available Cash</dt><dd id="account-cash">$0.00</dd></div>
+            <div><dt>Buying Power</dt><dd id="account-bp">$0.00</dd></div>
+          </dl>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>System Health</h2><span>Bot process &amp; host resource usage</span></div>
+          <dl>
+            <div><dt>Process CPU</dt><dd id="health-proc-cpu">—</dd></div>
+            <div><dt>Process Memory</dt><dd id="health-proc-mem">—</dd></div>
+            <div><dt>Process Uptime</dt><dd id="health-proc-uptime">—</dd></div>
+            <div><dt id="health-sys-cpu-label">Host CPU</dt><dd id="health-sys-cpu">—</dd></div>
+            <div><dt>Host Memory</dt><dd id="health-sys-mem">—</dd></div>
+            <div><dt>Disk Usage</dt><dd id="health-sys-disk">—</dd></div>
+          </dl>
+        </article>
+      </section>
+
+      <section class="grid grid-middle">
+        <article class="card">
+          <div class="card-head"><h2>Recent Activity</h2><span>Every strategy signal, why it fired, and the news alert behind it when there is one</span></div>
+          <div class="table-scroll"><table><thead><tr><th>Time</th><th>Strategy</th><th>Symbol</th><th>Action</th><th>Reason</th><th>Confirmed</th></tr></thead><tbody id="activity-table"><tr><td colspan="6" class="empty">No activity yet</td></tr></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="alerts" class="grid grid-middle">
+        <article class="card">
+          <div class="card-head"><h2>News &amp; Sentiment Alerts</h2><span>Emergency-stop liquidations on severe negative news, plus scalping's news-sentiment-rider entries</span></div>
+          <div class="table-scroll"><table><thead><tr><th>Time</th><th>Severity</th><th>Symbol</th><th>Message</th></tr></thead><tbody id="news-alerts-table"><tr><td colspan="4" class="empty">No alerts yet</td></tr></tbody></table></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>⚠ Capital Sanity Alerts</h2><span>Fires if IB ever reports a buying_power/portfolio_value implausible for this account's real size — a real $100,271 fill on 2026-09-08 went undetected for a day before this existed. Empty is healthy; any entry means IB reported something wrong and needs a human look, even though position sizing is already hard-capped regardless.</span></div>
+          <div class="table-scroll"><table><thead><tr><th>Time</th><th>Field</th><th>Reported Value</th><th>Threshold</th></tr></thead><tbody id="capital-anomalies-table"><tr><td colspan="4" class="empty">No anomalies — healthy</td></tr></tbody></table></div>
+        </article>
+      </section>
+
+      <section id="advanced" class="advanced card">
+        <div class="advanced-grid">
+          <div><h2>⚙ Strategies</h2><div id="strategy-toggles" class="toggle-groups"><div class="empty">Loading strategies…</div></div></div>
+          <div><h2>🎚 Per-Strategy Stop-Loss / Take-Profit</h2><p class="muted">Unchecked uses the global default. Checked uses custom values.</p><div class="table-scroll"><table><thead><tr><th>Strategy</th><th>Custom</th><th>Stop-Loss %</th><th>Take-Profit %</th><th></th></tr></thead><tbody id="strategy-risk-table"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody></table></div></div>
+          <div><h2>🧠 Signal Confidence Filter</h2><label class="inline-control">Min confidence <input type="number" id="confidence-threshold" min="0" max="1" step="0.05" value="0.6" onchange="updateConfidenceThreshold(this.value)"></label><table><thead><tr><th>Strategy</th><th>Fired</th><th>Filtered</th><th>Rate</th></tr></thead><tbody id="confidence-stats-table"><tr><td colspan="4" class="empty">No data</td></tr></tbody></table></div>
+          <div><h2>💰 Position Sizing</h2><p class="muted">Max position size is a % of current portfolio value. The hard ceiling is an absolute dollar/GBP amount, independent of that %, and always wins if it's smaller (protects against a real incident: IB once briefly reported a corrupted balance and sized a position to $100,271). Whichever of the two computes smaller is what actually gets used each trade.</p><label class="inline-control">Max position size (% of portfolio) <input type="number" id="max-position-size" min="1" max="100" step="1" value="37" onchange="updatePositionSizing('max_position_size', this.value / 100)"></label><label class="inline-control">Hard ceiling ($ / £, absolute) <input type="number" id="hard-position-ceiling" min="1" step="1" value="250" onchange="updatePositionSizing('hard_position_ceiling_gbp', this.value)"></label><p id="position-sizing-status" class="muted"></p></div>
+          <div><h2>🌙 Extended-Hours Trading</h2><p class="muted">Pre-market 4:00–9:30am ET and post-market 4:00–8:00pm ET. Always on while trading (2026-09-03: no longer a separate toggle — one bot handles regular + extended hours together).</p><p id="extended-hours-stats" class="muted">Loading…</p></div>
+          <div><h2>🌍 International Markets Trading</h2><p class="muted">34 markets across Europe, Asia, the Americas, and the Middle East, plus 15 forex pairs (see config.INTERNATIONAL_MARKETS/FOREX_PAIRS for the full list). Always on while trading (2026-09-03: no longer a separate toggle).</p><p id="international-markets-stats" class="muted">Loading…</p></div>
+          <div class="tradeable-universe-card"><h2>🔎 Tradeable Universe Screener</h2><p class="muted">Which international markets are actually reachable right now vs. blocked by IB's own $2,000-minimum-balance-per-currency rule (2026-09-09 finding — confirmed live, applies per-currency regardless of share price). Candidates found in a blocked market are still shown — they become tradeable automatically once real capital crosses that floor, no code change needed.</p><div id="tradeable-universe-summary" class="muted">Loading…</div><div class="table-scroll"><table><thead><tr><th>Market</th><th>Currency</th><th>Status</th><th>Recent candidates</th><th>Last scan</th></tr></thead><tbody id="tradeable-universe-table"><tr><td colspan="5" class="empty">Loading…</td></tr></tbody></table></div></div>
         </div>
+      </section>
 
-        <!-- Bracket Orders Table -->
-        <div class="card table-card">
-            <div class="card-title">🎯 Bracket Orders (Stop-Loss & Take-Profit)</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Quantity</th>
-                        <th>Entry Price</th>
-                        <th>Current Price</th>
-                        <th>Stop-Loss</th>
-                        <th>Take-Profit</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="bracket-table">
-                    <tr>
-                        <td colspan="7" class="loading">No bracket orders yet</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+      <footer>Lumibot Trading Bot with Web Dashboard <span id="footer-status">Disconnected</span></footer>
+    </main>
+  </div>
 
-        <!-- Backtest -->
-        <div class="card table-card">
-            <div class="card-title">🧪 Run a Backtest</div>
-            <div class="bt-controls">
-                <div class="bt-field">
-                    <label>Symbol</label>
-                    <input type="text" id="bt-symbol" placeholder="AAPL" style="width: 100px; text-transform: uppercase;">
-                </div>
-                <div class="bt-field">
-                    <label>Start Date</label>
-                    <input type="date" id="bt-start">
-                </div>
-                <div class="bt-field">
-                    <label>End Date</label>
-                    <input type="date" id="bt-end">
-                </div>
-                <button class="btn-start" id="bt-run-btn" onclick="runBacktest()">▶ Run Backtest</button>
-            </div>
-            <div id="bt-status" style="margin-top: 15px; font-size: 14px; color: #666;"></div>
-            <div id="bt-results" style="margin-top: 15px;"></div>
-        </div>
-
-        <!-- Orders Table -->
-        <div class="card table-card">
-            <div class="card-title">📋 Recent Orders</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Order ID</th>
-                        <th>Symbol</th>
-                        <th>Side</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Status</th>
-                        <th>Filled</th>
-                        <th>Time</th>
-                    </tr>
-                </thead>
-                <tbody id="orders-table">
-                    <tr>
-                        <td colspan="8" class="loading">No orders yet</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <footer>
-            <p>Lumibot Trading Bot with Web Dashboard | <a href="#" style="color: inherit; text-decoration: none;">Documentation</a> | <span id="footer-status">Disconnected</span></p>
-        </footer>
+  <div id="live-credentials-modal" class="modal-backdrop">
+    <div class="modal">
+      <h3>Live IBKR credentials</h3>
+      <p>Stored so they're ready when live execution is built — this does <strong>not</strong> connect to a live account or place real trades yet.</p>
+      <label for="live-username">IBKR username</label>
+      <input type="text" id="live-username" autocomplete="off">
+      <label for="live-password">IBKR password</label>
+      <input type="password" id="live-password" autocomplete="off">
+      <div class="modal-actions">
+        <button class="cancel" onclick="closeLiveCredentialsModal()">Cancel</button>
+        <button class="save" onclick="saveLiveCredentials()">Save</button>
+      </div>
     </div>
+  </div>
 
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script>
         let socket;
         let botStatus = 'stopped';
         let updateCount = 0;
-        let btPollInterval = null;
+        let tradingMode = 'paper';
+        // 2026-09-09: this account's real base currency is GBP, confirmed
+        // live against IB directly (every top-line figure -- NetLiquidation,
+        // BuyingPower, AvailableFunds, TotalCashValue -- reports in GBP, not
+        // USD). /api/status now returns account_currency; default here is
+        // just the pre-first-fetch placeholder, not an assumption.
+        let currencySymbol = '$';
 
-        // Initialize WebSocket connection
-        function initWebSocket() {
-            socket = io();
+        // --- Dashboard access key ---
+        let apiKey = localStorage.getItem('lumibot_api_key');
+        const urlKey = new URLSearchParams(location.search).get('key');
+        if (urlKey) { apiKey = urlKey; localStorage.setItem('lumibot_api_key', apiKey); history.replaceState({}, document.title, location.pathname); }
+        if (!apiKey) { apiKey = prompt('Enter dashboard access key:'); if (apiKey) localStorage.setItem('lumibot_api_key', apiKey); }
 
-            socket.on('connect', function() {
-                console.log('Connected to bot');
-                document.getElementById('footer-status').textContent = 'Connected';
-                addAlert('Connected to trading bot', 'success');
-            });
-
-            socket.on('bot_update', function(data) {
-                updateDashboard(data);
-            });
-
-            socket.on('bot_status', function(data) {
-                updateDashboard(data);
-            });
-
-            socket.on('disconnect', function() {
-                console.log('Disconnected from bot');
-                document.getElementById('footer-status').textContent = 'Disconnected';
-                addAlert('Lost connection to trading bot', 'error');
-            });
-
-            socket.on('connect_response', function(data) {
-                console.log('Connection response:', data);
-            });
+        function authFetch(url, options = {}) {
+            options.headers = Object.assign({}, options.headers, { 'X-API-Key': apiKey || '' });
+            return fetch(url, options);
         }
 
-        // Update dashboard with bot data
+        function addAlert(message, type = 'info') {
+            const el = document.createElement('div');
+            el.className = 'toast ' + type;
+            el.textContent = message;
+            document.getElementById('alerts-container').appendChild(el);
+            setTimeout(() => el.remove(), 5000);
+        }
+
+        function clockTick() {
+            const d = new Date();
+            document.getElementById('clock').textContent = d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' }) + ', ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // --- Nav ---
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.dataset.soon) {
+                    addAlert(btn.dataset.soon + ' — coming soon', 'warning');
+                    return;
+                }
+                document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const target = document.getElementById(btn.dataset.target);
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.getElementById('section-title').textContent = btn.querySelector('span').textContent;
+            });
+        });
+
+        // --- Socket ---
+        function initWebSocket() {
+            socket = io({ query: { key: apiKey || '' } });
+            socket.on('connect', () => {
+                document.getElementById('footer-status').textContent = 'Connected';
+                document.getElementById('side-connection').innerHTML = '<i></i> CONNECTED';
+                addAlert('Connected to trading bot', 'success');
+            });
+            socket.on('disconnect', () => {
+                document.getElementById('footer-status').textContent = 'Disconnected';
+                document.getElementById('side-connection').innerHTML = '<i></i> DISCONNECTED';
+                addAlert('Lost connection to trading bot', 'error');
+            });
+            socket.on('bot_update', updateDashboard);
+            socket.on('bot_status', updateDashboard);
+        }
+
         function updateDashboard(data) {
             if (!data) return;
-
             updateCount++;
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString();
-
-            // Update status
             botStatus = data.status || 'stopped';
             const badge = document.getElementById('status-badge');
-            badge.textContent = botStatus === 'trading' ? '🟢 TRADING' : '🔴 STOPPED';
-            badge.className = 'status-badge ' + botStatus;
+            badge.textContent = botStatus === 'trading' ? '● TRADING' : '● STOPPED';
+            badge.className = 'status ' + botStatus;
 
-            // Update stats
+            if (data.account_currency) {
+                currencySymbol = data.account_currency === 'GBP' ? '£' : '$';
+                document.getElementById('account-currency').textContent = data.account_currency;
+            }
             if (data.portfolio_value !== undefined) {
-                document.getElementById('portfolio-value').textContent = '$' + data.portfolio_value.toFixed(2);
+                document.getElementById('portfolio-value').textContent = currencySymbol + data.portfolio_value.toFixed(2);
+                document.getElementById('account-total').textContent = currencySymbol + data.portfolio_value.toFixed(2);
             }
-            if (data.cash !== undefined) {
-                document.getElementById('cash-value').textContent = '$' + data.cash.toFixed(2);
-            }
+            if (data.cash !== undefined) document.getElementById('account-cash').textContent = currencySymbol + data.cash.toFixed(2);
             if (data.buying_power !== undefined) {
-                document.getElementById('portfolio-subtext').textContent = 'Buying Power: $' + data.buying_power.toFixed(2);
+                document.getElementById('portfolio-subtext').textContent = 'Buying Power: ' + currencySymbol + data.buying_power.toFixed(2);
+                document.getElementById('account-bp').textContent = currencySymbol + data.buying_power.toFixed(2);
             }
-            if (data.positions_count !== undefined) {
-                document.getElementById('positions-count').textContent = data.positions_count;
-            }
-            if (data.open_orders_count !== undefined) {
-                document.getElementById('orders-count').textContent = data.open_orders_count;
-            }
-            if (data.bracket_orders_count !== undefined) {
-                document.getElementById('bracket-count').textContent = data.bracket_orders_count;
-            }
+            if (data.positions_count !== undefined) document.getElementById('positions-count').textContent = data.positions_count;
+            if (data.open_orders_count !== undefined) document.getElementById('orders-count').textContent = data.open_orders_count;
+            if (data.bracket_orders_count !== undefined) document.getElementById('bracket-count').textContent = data.bracket_orders_count;
 
-            // Update timestamp
-            document.getElementById('last-update').textContent = timeStr;
-            document.getElementById('update-status').textContent = 'Updated ' + updateCount + 'x';
-
-            // Update positions table
+            // Positions table: the socket DOES carry a real array here
+            // (unlike orders/brackets, which only ever carry counts), so
+            // this gives a faster real-time update when it arrives —
+            // loadPositions()'s own REST poll is what guarantees the
+            // table is correct on page load and on a fixed cadence.
             if (data.positions && Array.isArray(data.positions)) {
                 updatePositionsTable(data.positions);
             }
-
-            // Update bracket orders table
-            if (data.bracket_orders && Array.isArray(data.bracket_orders)) {
-                updateBracketTable(data.bracket_orders);
-            }
-
-            // Update orders table
-            if (data.open_orders && Array.isArray(data.open_orders)) {
-                updateOrdersTable(data.open_orders);
-            }
         }
 
-        // Update positions table
+        // --- Positions (with up/down movement arrow between polls) ---
+        const lastPrices = {};
         function updatePositionsTable(positions) {
             const tbody = document.getElementById('positions-table');
             if (positions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="loading">No positions yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="empty">No positions yet</td></tr>';
                 return;
             }
-
             tbody.innerHTML = positions.map(p => {
+                const current = p.current_price || 0;
                 const pnl = p.unrealized_pnl || 0;
                 const pnlPercent = ((pnl / (p.avg_fill_price * p.quantity)) * 100).toFixed(2);
                 const pnlClass = pnl >= 0 ? 'positive' : 'negative';
                 const sign = pnl >= 0 ? '+' : '';
 
+                const prev = lastPrices[p.symbol];
+                let arrow = '', arrowClass = '';
+                if (current > 0 && prev !== undefined) {
+                    if (current > prev) { arrow = '▲'; arrowClass = 'positive'; }
+                    else if (current < prev) { arrow = '▼'; arrowClass = 'negative'; }
+                }
+                if (current > 0) lastPrices[p.symbol] = current;
+
                 return `
                     <tr>
                         <td><strong>${p.symbol}</strong></td>
                         <td>${p.quantity}</td>
-                        <td>$${p.avg_fill_price.toFixed(2)}</td>
-                        <td>$${(p.current_price || 0).toFixed(2)}</td>
-                        <td class="${pnlClass}">${sign}$${pnl.toFixed(2)}</td>
-                        <td class="${pnlClass}">${sign}${pnlPercent}%</td>
+                        <td>${currencySymbol}${p.avg_fill_price.toFixed(2)}</td>
+                        <td>${currencySymbol}${current.toFixed(2)} <span class="${arrowClass}">${arrow}</span></td>
+                        <td class="${pnlClass}">${sign}${currencySymbol}${pnl.toFixed(2)} (${sign}${pnlPercent}%)</td>
+                        <td><button class="liquidate-btn" onclick="liquidatePosition('${p.symbol}')">Liquidate</button></td>
                     </tr>
                 `;
             }).join('');
         }
-
-        // Update bracket orders table
-        function updateBracketTable(brackets) {
-            const tbody = document.getElementById('bracket-table');
-            if (brackets.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="loading">No bracket orders yet</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = brackets.map(b => {
-                return `
-                    <tr>
-                        <td><strong>${b.symbol}</strong></td>
-                        <td>${b.quantity}</td>
-                        <td>$${b.entry_price.toFixed(2)}</td>
-                        <td>$${(b.current_price || 0).toFixed(2)}</td>
-                        <td class="negative">$${b.stop_loss_price.toFixed(2)}</td>
-                        <td class="positive">$${b.take_profit_price.toFixed(2)}</td>
-                        <td>${b.status || 'PENDING'}</td>
-                    </tr>
-                `;
-            }).join('');
+        function loadPositions() {
+            authFetch('/api/positions').then(r => r.json()).then(data => updatePositionsTable(data.positions || [])).catch(e => console.error('Error loading positions:', e));
         }
 
-        // Update orders table
+        // --- Per-position Liquidate (2026-09-03) — close ONE position on
+        // demand, independent of Pause/Stop. Built for the deploy workflow:
+        // pause new entries, then liquidate only the currently-profitable
+        // positions one at a time, leaving red ones open to self-manage.
+        function liquidatePosition(symbol) {
+            if (!confirm(`Liquidate ${symbol} now?`)) return;
+            authFetch(`/api/positions/${encodeURIComponent(symbol)}/liquidate`, { method: 'POST' })
+                .then(r => r.json().then(data => ({ ok: r.ok, data })))
+                .then(({ ok, data }) => {
+                    if (!ok) { addAlert(`Could not liquidate ${symbol}: ${data.error}`, 'error'); return; }
+                    addAlert(`Liquidating ${symbol}...`, 'warning');
+                    loadPositions();
+                })
+                .catch(e => addAlert(`Error liquidating ${symbol}: ${e}`, 'error'));
+        }
+
+        // --- Performance Overview (today's realized P&L) ---
+        function loadPerformanceOverview() {
+            authFetch('/api/performance-overview').then(r => r.json()).then(data => {
+                const el = document.getElementById('perf-today-pnl');
+                const sub = document.getElementById('perf-today-subtext');
+                const pnl = data.total_pnl || 0;
+                const sign = pnl >= 0 ? '+' : '';
+                el.textContent = `${sign}${currencySymbol}${pnl.toFixed(2)}`;
+                el.className = pnl >= 0 ? 'positive' : 'negative';
+                sub.textContent = data.trade_count > 0
+                    ? `${data.trade_count} closed trade${data.trade_count === 1 ? '' : 's'} (${data.wins}W / ${data.losses}L)`
+                    : 'No closed trades yet today';
+            }).catch(e => console.error('Error loading performance overview:', e));
+        }
+
+        // --- Strategy Performance ---
+        function loadStrategyPerformance() {
+            authFetch('/api/strategy-performance').then(r => r.json()).then(data => {
+                const tbody = document.getElementById('strategy-performance-table');
+                const rows = data.strategies || [];
+                if (rows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty">No closed trades yet</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = rows.map(s => {
+                    const pnlClass = s.total_pnl >= 0 ? 'positive' : 'negative';
+                    const sign = s.total_pnl >= 0 ? '+' : '';
+                    const winRate = (s.win_rate * 100).toFixed(1);
+                    return `
+                        <tr>
+                            <td><strong>${s.strategy}</strong></td>
+                            <td>${s.trade_count}</td>
+                            <td class="${pnlClass}">${sign}${currencySymbol}${s.total_pnl.toFixed(2)}</td>
+                            <td>${winRate}%</td>
+                        </tr>
+                    `;
+                }).join('');
+            }).catch(e => console.error('Error loading strategy performance:', e));
+        }
+
+        // --- Recent Closed Orders ---
+        function loadRecentClosedOrders() {
+            authFetch('/api/recent-closed-orders?limit=20').then(r => r.json()).then(data => {
+                const tbody = document.getElementById('closed-orders-table');
+                const rows = data.orders || [];
+                if (rows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty">No closed trades yet</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = rows.map(o => {
+                    const pnlClass = o.pnl >= 0 ? 'positive' : 'negative';
+                    const sign = o.pnl >= 0 ? '+' : '';
+                    const pnlPct = (o.pnl_pct * 100).toFixed(2);
+                    return `
+                        <tr>
+                            <td><strong>${o.symbol}</strong></td>
+                            <td>${o.strategy}</td>
+                            <td>${currencySymbol}${o.entry_price.toFixed(2)}</td>
+                            <td>${currencySymbol}${o.exit_price.toFixed(2)}</td>
+                            <td class="${pnlClass}">${sign}${currencySymbol}${o.pnl.toFixed(2)} (${sign}${pnlPct}%)</td>
+                            <td>${o.close_reason || '—'}</td>
+                            <td>${o.closed_at || '—'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }).catch(e => console.error('Error loading recent closed orders:', e));
+        }
+
+        // --- Orders ---
         function updateOrdersTable(orders) {
             const tbody = document.getElementById('orders-table');
             if (orders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="loading">No orders yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="empty">No orders yet</td></tr>';
                 return;
             }
-
             tbody.innerHTML = orders.slice(0, 10).map(o => {
+                const time = o.created_at ? new Date(o.created_at).toLocaleTimeString() : '—';
+                const source = o.source && o.source !== 'main_bot' ? ` <span class="muted" style="display:inline">(${o.source})</span>` : '';
                 return `
                     <tr>
-                        <td><code>${(o.id || '').substring(0, 8)}</code></td>
-                        <td><strong>${o.symbol}</strong></td>
+                        <td><code>${(o.id || '').toString().substring(0, 8)}</code></td>
+                        <td><strong>${o.symbol}</strong>${source}</td>
                         <td>${o.side.toUpperCase()}</td>
                         <td>${o.quantity}</td>
-                        <td>${o.price ? '$' + o.price.toFixed(2) : 'Market'}</td>
+                        <td>${o.price ? currencySymbol + o.price.toFixed(2) : 'Market'}</td>
                         <td>${o.status}</td>
                         <td>${o.filled_quantity || 0}</td>
-                        <td>${new Date(o.created_at).toLocaleTimeString()}</td>
+                        <td>${time}</td>
                     </tr>
                 `;
             }).join('');
         }
-
-        // Control buttons
-        function startBot() {
-            fetch('/api/start', { method: 'POST' })
-                .then(r => r.json())
-                .then(data => {
-                    addAlert('Bot started successfully', 'success');
-                    socket.emit('request_update');
-                })
-                .catch(e => addAlert('Error starting bot: ' + e, 'error'));
+        function loadOrders() {
+            authFetch('/api/orders').then(r => r.json()).then(data => updateOrdersTable(data.orders || [])).catch(e => console.error('Error loading orders:', e));
         }
 
-        function stopBot() {
-            fetch('/api/stop', { method: 'POST' })
-                .then(r => r.json())
-                .then(data => {
-                    addAlert('Bot stopping and liquidating positions...', 'warning');
-                    socket.emit('request_update');
-                })
-                .catch(e => addAlert('Error stopping bot: ' + e, 'error'));
-        }
-
-        // Add alert message
-        function addAlert(message, type = 'info') {
-            const container = document.getElementById('alerts-container');
-            const alert = document.createElement('div');
-            alert.className = 'alert alert-' + type;
-            alert.textContent = message;
-            container.appendChild(alert);
-
-            setTimeout(() => alert.remove(), 5000);
-        }
-
-        // Fetch initial data
-        function fetchInitialData() {
-            fetch('/api/status')
-                .then(r => r.json())
-                .then(data => updateDashboard(data))
-                .catch(e => console.error('Error fetching status:', e));
-        }
-
-        // ------------------------------------------------------------------
-        // Backtesting
-        // ------------------------------------------------------------------
-
-        function runBacktest() {
-            const symbol = document.getElementById('bt-symbol').value.trim().toUpperCase();
-            const start = document.getElementById('bt-start').value;
-            const end = document.getElementById('bt-end').value;
-            const statusEl = document.getElementById('bt-status');
-            const resultsEl = document.getElementById('bt-results');
-            const btn = document.getElementById('bt-run-btn');
-
-            if (!symbol || !start || !end) {
-                statusEl.textContent = 'Please enter a symbol, start date, and end date.';
+        // --- Recent activity (signal log: which strategy, why, and any news reason) ---
+        function updateActivityTable(activity) {
+            const tbody = document.getElementById('activity-table');
+            if (activity.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty">No activity yet</td></tr>';
                 return;
             }
+            tbody.innerHTML = activity.slice(0, 10).map(a => {
+                const time = a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : '—';
+                const confirmedLabel = a.confirmed === null ? '—' : (a.confirmed ? 'Yes' : 'No');
+                const confirmedClass = a.confirmed === false ? 'negative' : (a.confirmed ? 'positive' : '');
+                return `
+                    <tr>
+                        <td>${time}</td>
+                        <td>${a.strategy}</td>
+                        <td><strong>${a.symbol}</strong></td>
+                        <td>${a.action}</td>
+                        <td>${a.reason}</td>
+                        <td class="${confirmedClass}">${confirmedLabel}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        function loadActivity() {
+            authFetch('/api/recent-activity?limit=10').then(r => r.json()).then(data => updateActivityTable(data.activity || [])).catch(e => console.error('Error loading activity:', e));
+        }
 
-            resultsEl.innerHTML = '';
-            statusEl.textContent = `Queuing backtest for ${symbol}...`;
-            btn.disabled = true;
+        // --- News / sentiment alerts ---
+        function updateNewsAlertsTable(alerts) {
+            const tbody = document.getElementById('news-alerts-table');
+            if (alerts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty">No alerts yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = alerts.map(a => {
+                const time = a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : '—';
+                return `
+                    <tr>
+                        <td>${time}</td>
+                        <td><span class="severity-badge ${a.severity}">${a.severity}</span></td>
+                        <td><strong>${a.symbol}</strong></td>
+                        <td>${a.message}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        function loadNewsAlerts() {
+            authFetch('/api/news-alerts?limit=20').then(r => r.json()).then(data => updateNewsAlertsTable(data.alerts || [])).catch(e => console.error('Error loading news alerts:', e));
+        }
 
-            fetch('/api/backtest', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ symbol, start, end })
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.error) {
-                    statusEl.textContent = 'Error: ' + data.error;
-                    btn.disabled = false;
+        // --- Capital sanity alerts (2026-09-09) ---
+        function loadCapitalAnomalies() {
+            authFetch('/api/capital-anomalies').then(r => r.json()).then(data => {
+                const tbody = document.getElementById('capital-anomalies-table');
+                const rows = data.anomalies || [];
+                if (rows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="empty">No anomalies — healthy</td></tr>';
                     return;
                 }
-                statusEl.textContent = `Backtest running for ${symbol}... (this can take a minute or two)`;
-                pollBacktest(data.job_id, btn, statusEl, resultsEl);
-            })
-            .catch(e => {
-                statusEl.textContent = 'Error starting backtest: ' + e;
-                btn.disabled = false;
-            });
+                tbody.innerHTML = rows.slice().reverse().map(a => {
+                    const time = a.timestamp ? new Date(a.timestamp).toLocaleString() : '—';
+                    return `<tr><td>${time}</td><td>${a.field}</td><td class="negative">${currencySymbol}${a.value.toLocaleString()}</td><td>${currencySymbol}${a.threshold.toLocaleString()}</td></tr>`;
+                }).join('');
+            }).catch(e => console.error('Error loading capital anomalies:', e));
         }
 
-        function pollBacktest(jobId, btn, statusEl, resultsEl) {
-            if (btPollInterval) clearInterval(btPollInterval);
+        // --- Bracket orders ---
+        function updateBracketTable(brackets) {
+            const tbody = document.getElementById('bracket-table');
+            if (brackets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty">No bracket orders yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = brackets.map(b => `
+                <tr>
+                    <td><strong>${b.symbol}</strong></td>
+                    <td>${currencySymbol}${b.entry_price.toFixed(2)}</td>
+                    <td class="negative">${currencySymbol}${b.stop_loss_price.toFixed(2)}</td>
+                    <td class="positive">${currencySymbol}${b.take_profit_price.toFixed(2)}</td>
+                    <td>${b.status || 'PENDING'}</td>
+                </tr>
+            `).join('');
+        }
+        function loadBracketOrders() {
+            authFetch('/api/bracket-orders').then(r => r.json()).then(data => updateBracketTable(data.bracket_orders || [])).catch(e => console.error('Error loading bracket orders:', e));
+        }
 
-            btPollInterval = setInterval(() => {
-                fetch('/api/backtest/' + jobId)
-                    .then(r => r.json())
-                    .then(job => {
-                        if (job.status === 'completed') {
-                            clearInterval(btPollInterval);
-                            btn.disabled = false;
-                            statusEl.textContent = `Backtest complete for ${job.symbol}.`;
-                            renderBacktestResult(job.result, resultsEl);
-                        } else if (job.status === 'failed') {
-                            clearInterval(btPollInterval);
-                            btn.disabled = false;
-                            statusEl.textContent = 'Backtest failed: ' + (job.error || 'Unknown error');
-                        } else {
-                            statusEl.textContent = `Backtest status: ${job.status}...`;
-                        }
-                    })
-                    .catch(e => {
-                        clearInterval(btPollInterval);
-                        btn.disabled = false;
-                        statusEl.textContent = 'Error checking backtest status: ' + e;
+        // --- Strategy toggles ---
+        function loadStrategyToggles() {
+            authFetch('/api/strategy-toggles').then(r => r.json()).then(toggles => renderStrategyToggles(toggles)).catch(e => console.error('Error loading strategy toggles:', e));
+        }
+        // 2026-09-11: split the flat toggle list into 3 groups so the 14
+        // new strategies (extended_strategies_live.py) don't get lost
+        // among the original 9 and the 5 pods. Group membership is a
+        // fixed lookup, not derived from the API response, since the
+        // backend's /api/strategy-toggles intentionally stays a flat
+        // {name: bool} dict (every other consumer of it is unaffected).
+        const STRATEGY_GROUPS = [
+            { label: 'Original strategies', names: ['momentum', 'scalping', 'scalping_v2', 'breakout', 'mean_reversion', 'vwap', 'gap_and_go', 'reversal', 'market_profile'] },
+            { label: 'New strategies (2026-09-11)', names: ['lab_range', 'supply_demand', 'supertrend_200ema', 'fakeout_breakout_fib', 'macd_200ema', 'ema_ribbon_smi', 'discount_zone', 'breakout_chandelier', 'volume_divergence_grab', 'asymmetric_dual', 'rigorous_rr', 'volume_absorption', 'candle_taxonomy', 'volume_profile'] },
+            { label: 'Pods', names: ['pod_stock', 'pod_etf', 'pod_commodity', 'pod_forex', 'pod_crypto'] },
+        ];
+        function renderStrategyToggles(toggles) {
+            const container = document.getElementById('strategy-toggles');
+            const seen = new Set();
+            const toggleHtml = (name, enabled) => `
+                <label class="toggle">
+                    <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleStrategy('${name}', this.checked)">
+                    <span>${name.replace(/_/g, ' ')}</span>
+                </label>`;
+            let html = STRATEGY_GROUPS.map(group => {
+                const rows = group.names.filter(name => name in toggles);
+                rows.forEach(name => seen.add(name));
+                if (!rows.length) return '';
+                return `<div class="toggle-group">
+                    <div class="toggle-group-label">${group.label}</div>
+                    <div class="toggle-grid">${rows.map(name => toggleHtml(name, toggles[name])).join('')}</div>
+                </div>`;
+            }).join('');
+            // Anything not in a known group (future additions) still shows up, ungrouped, rather than silently disappearing.
+            const leftover = Object.keys(toggles).filter(name => !seen.has(name));
+            if (leftover.length) {
+                html += `<div class="toggle-group">
+                    <div class="toggle-group-label">Other</div>
+                    <div class="toggle-grid">${leftover.map(name => toggleHtml(name, toggles[name])).join('')}</div>
+                </div>`;
+            }
+            container.innerHTML = html;
+        }
+        function toggleStrategy(name, enabled) {
+            authFetch('/api/strategy-toggles', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [name]: enabled }) })
+                .then(r => r.json())
+                .then(() => addAlert(`${name.replace(/_/g, ' ')} strategy ${enabled ? 'enabled' : 'disabled'}`, enabled ? 'success' : 'warning'))
+                .catch(e => addAlert('Error updating strategy: ' + e, 'error'));
+        }
+
+        // --- Per-strategy risk ---
+        // 2026-09-11: strategies that compute their own dynamic (price-
+        // structure-derived) stop/target via get_exit_levels() ALWAYS use
+        // that real price instead of this flat %/table -- confirmed
+        // against strategy_manager._run_strategy and BracketOrder's own
+        // logic (dynamic exit_levels win over the flat % whenever both
+        // are present). Showing a flat %/TP row for those strategies was
+        // misleading (looked live, was actually dead/unused for every one
+        // of them) -- excluded here rather than removed from the backend,
+        // since /api/strategy-risk itself still needs to serve the flat
+        // value for the strategies that genuinely use it.
+        const RISK_TABLE_EXCLUDE = new Set([
+            'mean_reversion', 'vwap', 'reversal', 'market_profile',
+            'lab_range', 'supply_demand', 'supertrend_200ema', 'fakeout_breakout_fib',
+            'macd_200ema', 'ema_ribbon_smi', 'discount_zone', 'breakout_chandelier',
+            'volume_divergence_grab', 'asymmetric_dual', 'rigorous_rr',
+            'volume_absorption', 'candle_taxonomy', 'volume_profile',
+        ]);
+        function loadStrategyRisk() {
+            authFetch('/api/strategy-risk').then(r => r.json()).then(risk => renderStrategyRisk(risk)).catch(e => console.error('Error loading strategy risk:', e));
+        }
+        function renderStrategyRisk(risk) {
+            const tbody = document.getElementById('strategy-risk-table');
+            tbody.innerHTML = Object.entries(risk).filter(([name]) => !RISK_TABLE_EXCLUDE.has(name)).map(([name, r]) => `
+                <tr>
+                    <td>${name.replace(/_/g, ' ')}</td>
+                    <td><input type="checkbox" ${r.is_custom ? 'checked' : ''} onchange="riskToggle('${name}', this.checked)"></td>
+                    <td><input id="sl-${name}" type="number" value="${(r.stop_loss_percent * 100).toFixed(1)}" step="0.1" min="0.1" style="width:60px" ${r.is_custom ? '' : 'disabled'}></td>
+                    <td><input id="tp-${name}" type="number" value="${(r.take_profit_percent * 100).toFixed(1)}" step="0.1" min="0.1" style="width:60px" ${r.is_custom ? '' : 'disabled'}></td>
+                    <td><button class="link-btn" onclick="saveRisk('${name}')" ${r.is_custom ? '' : 'disabled'}>Save</button></td>
+                </tr>
+            `).join('');
+        }
+        function riskToggle(name, custom) {
+            const sl = document.getElementById('sl-' + name), tp = document.getElementById('tp-' + name);
+            sl.disabled = tp.disabled = !custom;
+            if (!custom) clearRiskOverride(name); else loadStrategyRisk();
+        }
+        // Real body shape (confirmed against api.py): {strategy_name:
+        // {custom, stop_loss_percent, take_profit_percent}} — the
+        // uploaded design's app.js assumed a different, incorrect shape
+        // ({strategy: name, ...}); fixed to match the actual backend.
+        function saveRisk(name) {
+            const sl = parseFloat(document.getElementById('sl-' + name).value) / 100;
+            const tp = parseFloat(document.getElementById('tp-' + name).value) / 100;
+            authFetch('/api/strategy-risk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [name]: { custom: true, stop_loss_percent: sl, take_profit_percent: tp } }) })
+                .then(r => r.json())
+                .then(() => { addAlert(`${name.replace(/_/g, ' ')} risk updated`, 'success'); loadStrategyRisk(); })
+                .catch(e => addAlert('Error saving risk: ' + e, 'error'));
+        }
+        function clearRiskOverride(name) {
+            authFetch('/api/strategy-risk', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [name]: { custom: false } }) })
+                .then(() => loadStrategyRisk())
+                .catch(e => addAlert('Error clearing risk override: ' + e, 'error'));
+        }
+
+        // --- Confidence filter ---
+        function loadConfidenceThreshold() {
+            authFetch('/api/signal-settings').then(r => r.json()).then(s => { document.getElementById('confidence-threshold').value = s.min_signal_confidence ?? 0.6; }).catch(e => console.error(e));
+        }
+        // --- Position sizing (max % + hard $ ceiling) ---
+        function loadPositionSizing() {
+            authFetch('/api/signal-settings').then(r => r.json()).then(s => {
+                document.getElementById('max-position-size').value = Math.round((s.max_position_size ?? 0.37) * 100);
+                document.getElementById('hard-position-ceiling').value = s.hard_position_ceiling_gbp ?? 250;
+            }).catch(e => console.error(e));
+        }
+        function updateConfidenceThreshold(value) {
+            authFetch('/api/signal-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ min_signal_confidence: parseFloat(value) }) })
+                .then(() => addAlert('Confidence threshold updated', 'success'))
+                .catch(e => addAlert('Error updating threshold: ' + e, 'error'));
+        }
+        function updatePositionSizing(key, value) {
+            authFetch('/api/signal-settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ [key]: parseFloat(value) }) })
+                .then(() => { document.getElementById('position-sizing-status').textContent = 'Saved.'; })
+                .catch(e => { document.getElementById('position-sizing-status').textContent = 'Error saving: ' + e; });
+        }
+        function loadConfidenceStats() {
+            authFetch('/api/confidence-stats').then(r => r.json()).then(stats => {
+                const rows = Object.entries(stats).filter(([, s]) => (s.fired + s.filtered) > 0);
+                const tbody = document.getElementById('confidence-stats-table');
+                if (rows.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="empty">No BUY signals confirmed yet</td></tr>'; return; }
+                tbody.innerHTML = rows.map(([name, s]) => {
+                    const total = s.fired + s.filtered;
+                    const rate = total ? ((s.filtered / total) * 100).toFixed(0) : 0;
+                    return `<tr><td>${name.replace(/_/g, ' ')}</td><td>${s.fired}</td><td>${s.filtered}</td><td>${rate}%</td></tr>`;
+                }).join('');
+            }).catch(e => console.error(e));
+        }
+
+        // --- Extended-hours / international-markets (2026-09-03: read-only
+        // stats now — always on while trading, no separate toggle) ---
+        function loadExtendedHours() {
+            authFetch('/api/extended-hours-trading').then(r => r.json()).then(data => {
+                const s = data.stats || {};
+                const parts = [];
+                if (s.last_session) parts.push(`session: ${s.last_session}`);
+                parts.push(`cycles: ${s.cycles ?? 0}`);
+                parts.push(`orders placed: ${s.orders_placed ?? 0}`);
+                parts.push(`filled: ${s.orders_filled ?? 0}`);
+                if (s.last_cycle_at) parts.push(`last cycle: ${new Date(s.last_cycle_at).toLocaleTimeString()}`);
+                document.getElementById('extended-hours-stats').textContent = parts.join(' · ');
+            }).catch(e => console.error(e));
+        }
+        function loadInternationalMarkets() {
+            authFetch('/api/international-markets-trading').then(r => r.json()).then(data => {
+                const s = data.stats || {};
+                const parts = [];
+                parts.push(`cycles: ${s.cycles ?? 0}`);
+                parts.push(`candidates seen: ${s.candidates_found ?? 0}`);
+                parts.push(`orders placed: ${s.orders_placed ?? 0}`);
+                if (s.last_cycle_at) parts.push(`last cycle: ${new Date(s.last_cycle_at).toLocaleTimeString()}`);
+                if (s.last_error) parts.push(`last error: ${s.last_error}`);
+                document.getElementById('international-markets-stats').textContent = parts.join(' · ');
+            }).catch(e => console.error(e));
+        }
+
+        // --- Tradeable Universe screener (2026-09-09) ---
+        function loadTradeableUniverse() {
+            authFetch('/api/tradeable-universe').then(r => r.json()).then(data => {
+                const established = data.established_currencies || [];
+                document.getElementById('tradeable-universe-summary').textContent =
+                    `Established currencies (always reachable): ${established.join(', ')}`;
+                const tbody = document.getElementById('tradeable-universe-table');
+                const rows = [];
+                const addRows = (obj, tradeable) => {
+                    Object.keys(obj).sort().forEach(marketKey => {
+                        const m = obj[marketKey];
+                        rows.push({ marketKey, ...m, tradeable });
                     });
-            }, 3000);
-        }
-
-        function renderBacktestResult(data, resultsEl) {
-            const result = (data && data.result) || {};
-            // Lumibot's returned stats dict can vary; show common keys if present,
-            // otherwise fall back to a raw dump so nothing is hidden.
-            const knownKeys = ['cagr', 'total_return', 'sharpe_ratio', 'max_drawdown', 'volatility', 'romad'];
-            let html = '<table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
-            let foundAny = false;
-
-            knownKeys.forEach(key => {
-                if (result[key] !== undefined && result[key] !== null) {
-                    foundAny = true;
-                    let val = result[key];
-                    if (typeof val === 'number') {
-                        const isPercentish = key.includes('return') || key === 'cagr' || key === 'max_drawdown' || key === 'volatility';
-                        val = (val * (isPercentish ? 100 : 1)).toFixed(2) + (isPercentish ? '%' : '');
-                    }
-                    html += `<tr><td>${key.replace(/_/g, ' ')}</td><td>${val}</td></tr>`;
+                };
+                addRows(data.tradeable_markets || {}, true);
+                addRows(data.waiting_on_currency || {}, false);
+                if (rows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="empty">No scans yet — the international scanner runs on a 30-minute-per-market rotation, check back shortly</td></tr>';
+                    return;
                 }
-            });
-            html += '</tbody></table>';
-
-            if (!foundAny) {
-                html = '<pre style="background: #f9fafb; padding: 12px; border-radius: 5px; overflow-x: auto; font-size: 12px;">' +
-                       JSON.stringify(result, null, 2) + '</pre>';
-            }
-
-            resultsEl.innerHTML = html;
+                tbody.innerHTML = rows.map(r => {
+                    const statusLabel = r.tradeable ? '<span class="positive">✓ Tradeable</span>' : '<span class="negative">⧗ Waiting on currency</span>';
+                    const candidates = (r.candidates || []).length ? (r.candidates || []).join(', ') : '—';
+                    const lastScan = r.last_scan_at ? new Date(r.last_scan_at).toLocaleTimeString() : '—';
+                    return `<tr><td>${r.marketKey.replace(/_/g, ' ')}</td><td>${r.currency}</td><td>${statusLabel}</td><td>${candidates}</td><td>${lastScan}</td></tr>`;
+                }).join('');
+            }).catch(e => console.error('Error loading tradeable universe:', e));
         }
 
-        // Periodic refresh
-        setInterval(() => {
-            if (socket && socket.connected) {
-                socket.emit('request_update');
+        // --- Pause new entries (distinct from Stop — exits stay active) ---
+        let pauseNewEntriesState = false;
+        function setPauseButton(paused) {
+            pauseNewEntriesState = paused;
+            const btn = document.getElementById('pause-new-entries-btn');
+            btn.textContent = paused ? '▷ Resume New Entries' : '⏸ Pause New Entries';
+            btn.classList.toggle('active', paused);
+            const testBtn = document.getElementById('test-all-strategies-btn');
+            if (!testSweepRunning) {
+                testBtn.disabled = !paused;
+                testBtn.title = paused ? '' : 'Pause new entries first';
             }
-        }, 2000);
+        }
+        function loadPauseNewEntries() {
+            authFetch('/api/pause-new-entries').then(r => r.json()).then(data => {
+                setPauseButton(!!data.paused);
+            }).catch(e => console.error(e));
+        }
+        function togglePauseNewEntriesBtn() {
+            const paused = !pauseNewEntriesState;
+            authFetch('/api/pause-new-entries', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ paused }) })
+                .then(r => r.json())
+                .then(data => {
+                    setPauseButton(!!data.paused);
+                    addAlert(`New entries ${data.paused ? 'paused — existing positions still manage their own exits' : 'resumed'}`, data.paused ? 'warning' : 'success');
+                })
+                .catch(e => addAlert('Error updating pause-new-entries: ' + e, 'error'));
+        }
 
-        // Initialize on page load
+        // --- Test All Strategies (only enabled while new entries are paused) ---
+        let testSweepRunning = false;
+        let testSweepPollTimer = null;
+        function runTestAllStrategies() {
+            const btn = document.getElementById('test-all-strategies-btn');
+            if (btn.disabled || testSweepRunning) return;
+            authFetch('/api/test-all-strategies', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) { addAlert('Test sweep: ' + data.error, 'error'); return; }
+                    addAlert('Test sweep started — placing and closing one order per strategy', 'warning');
+                    startTestSweepPolling();
+                })
+                .catch(e => addAlert('Error starting test sweep: ' + e, 'error'));
+        }
+        function startTestSweepPolling() {
+            testSweepRunning = true;
+            const btn = document.getElementById('test-all-strategies-btn');
+            btn.disabled = true;
+            btn.classList.add('running');
+            if (testSweepPollTimer) clearInterval(testSweepPollTimer);
+            testSweepPollTimer = setInterval(pollTestSweepStatus, 3000);
+            pollTestSweepStatus();
+        }
+        function pollTestSweepStatus() {
+            authFetch('/api/test-all-strategies/status').then(r => r.json()).then(data => {
+                const btn = document.getElementById('test-all-strategies-btn');
+                const done = (data.results || []).filter(r => r.sell !== 'pending').length;
+                const total = data.running ? '8' : (data.results || []).length;
+                btn.textContent = data.running ? `🧪 Testing... (${done}/${total})` : '🧪 Test All Strategies';
+                if (!data.running) {
+                    clearInterval(testSweepPollTimer);
+                    testSweepPollTimer = null;
+                    testSweepRunning = false;
+                    btn.classList.remove('running');
+                    btn.disabled = !pauseNewEntriesState;
+                    const failed = (data.results || []).filter(r => r.buy !== 'filled' || (r.sell !== 'closed' && r.sell !== 'skipped'));
+                    if (data.results && data.results.length) {
+                        addAlert(
+                            failed.length === 0
+                                ? `Test sweep complete — all ${data.results.length} strategies filled and closed cleanly`
+                                : `Test sweep complete — ${failed.length} of ${data.results.length} strategies need a look (see console)`,
+                            failed.length === 0 ? 'success' : 'warning'
+                        );
+                        console.table(data.results);
+                    }
+                }
+            }).catch(e => console.error('Test sweep status error:', e));
+        }
+
+        // --- Account mode (paper/live) — display + credential storage only ---
+        function setModeButtons(mode) {
+            document.getElementById('mode-paper').className = 'mode-btn' + (mode === 'paper' ? ' active paper' : '');
+            document.getElementById('mode-live').className = 'mode-btn' + (mode === 'live' ? ' active live' : '');
+            document.getElementById('account-mode-text').textContent = 'Account mode: ' + (mode === 'live' ? 'LIVE TRADING' : 'PAPER TRADING');
+            document.getElementById('live-mode-banner').style.display = mode === 'live' ? 'block' : 'none';
+        }
+        function loadAccountMode() {
+            authFetch('/api/account-mode').then(r => r.json()).then(d => { tradingMode = d.mode || 'paper'; setModeButtons(tradingMode); }).catch(e => console.error(e));
+        }
+
+        // --- System Health (real psutil data — process + host CPU/memory/disk) ---
+        function formatUptime(seconds) {
+            const h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60);
+            return h > 0 ? `${h}h ${m}m` : `${m}m`;
+        }
+        function loadSystemHealth() {
+            authFetch('/api/system-health').then(r => r.json()).then(d => {
+                if (d.error) return;
+                const p = d.process, s = d.system;
+                document.getElementById('health-proc-cpu').textContent = p.cpu_percent.toFixed(1) + '%';
+                document.getElementById('health-proc-mem').textContent = p.memory_mb.toFixed(0) + ' MB';
+                document.getElementById('health-proc-uptime').textContent = formatUptime(p.uptime_seconds);
+                document.getElementById('health-sys-cpu-label').textContent = `Host CPU (${s.cpu_count} cores)`;
+                document.getElementById('health-sys-cpu').textContent = s.cpu_percent.toFixed(1) + '%';
+                document.getElementById('health-sys-mem').textContent = `${s.memory_used_gb.toFixed(1)} / ${s.memory_total_gb.toFixed(1)} GB (${s.memory_percent.toFixed(0)}%)`;
+                document.getElementById('health-sys-disk').textContent = `${s.disk_used_gb.toFixed(1)} / ${s.disk_total_gb.toFixed(1)} GB (${s.disk_percent.toFixed(0)}%)`;
+            }).catch(e => console.error('Error loading system health:', e));
+        }
+        function setTradingMode(mode) {
+            if (mode === tradingMode) return;
+            if (mode === 'live') {
+                if (!confirm('Switch to LIVE mode?\n\nThis only selects LIVE as your preference and lets you store live IBKR credentials — it does NOT place any real trades. Live execution is not implemented yet. Continue?')) {
+                    return;
+                }
+            }
+            authFetch('/api/account-mode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode }) })
+                .then(r => r.json())
+                .then(d => {
+                    tradingMode = d.mode;
+                    setModeButtons(tradingMode);
+                    addAlert(tradingMode === 'live' ? 'LIVE mode selected (no real trading yet)' : 'PAPER mode selected', tradingMode === 'live' ? 'warning' : 'success');
+                    if (tradingMode === 'live') {
+                        authFetch('/api/live-credentials').then(r => r.json()).then(c => {
+                            if (!c.configured) openLiveCredentialsModal();
+                        });
+                    }
+                })
+                .catch(e => addAlert('Error updating account mode: ' + e, 'error'));
+        }
+        function openLiveCredentialsModal() { document.getElementById('live-credentials-modal').classList.add('open'); }
+        function closeLiveCredentialsModal() { document.getElementById('live-credentials-modal').classList.remove('open'); }
+        function saveLiveCredentials() {
+            const username = document.getElementById('live-username').value.trim();
+            const password = document.getElementById('live-password').value;
+            if (!username || !password) { addAlert('Enter both a username and password', 'error'); return; }
+            authFetch('/api/live-credentials', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) })
+                .then(r => r.json())
+                .then(() => {
+                    addAlert('Live credentials stored (not connected — live execution not implemented)', 'success');
+                    document.getElementById('live-username').value = '';
+                    document.getElementById('live-password').value = '';
+                    closeLiveCredentialsModal();
+                })
+                .catch(e => addAlert('Error saving credentials: ' + e, 'error'));
+        }
+
+        // --- Start / Stop ---
+        function startBot() {
+            authFetch('/api/start', { method: 'POST' }).then(() => addAlert('Bot started successfully', 'success')).catch(e => addAlert('Error starting bot: ' + e, 'error'));
+        }
+        function stopBot() {
+            authFetch('/api/stop', { method: 'POST' }).then(() => addAlert('Bot stopping — trading (including extended-hours/international-markets) disabled', 'warning')).catch(e => addAlert('Error stopping bot: ' + e, 'error'));
+        }
+
+        // --- Init ---
+        function fetchInitialData() {
+            authFetch('/api/status').then(r => r.json()).then(data => updateDashboard(data)).catch(e => console.error('Error fetching status:', e));
+        }
+
+        setInterval(clockTick, 1000);
+        setInterval(() => { if (socket && socket.connected) socket.emit('request_update'); }, 2000);
+        setInterval(loadConfidenceStats, 5000);
+        setInterval(loadExtendedHours, 5000);
+        setInterval(loadInternationalMarkets, 5000);
+        setInterval(loadTradeableUniverse, 5000);
+        setInterval(loadPauseNewEntries, 5000);
+        setInterval(loadOrders, 5000);
+        setInterval(loadBracketOrders, 5000);
+        setInterval(loadPositions, 5000);
+        setInterval(loadSystemHealth, 5000);
+        setInterval(loadActivity, 5000);
+        setInterval(loadNewsAlerts, 5000);
+        setInterval(loadCapitalAnomalies, 5000);
+        setInterval(loadPerformanceOverview, 5000);
+        setInterval(loadStrategyPerformance, 5000);
+        setInterval(loadRecentClosedOrders, 5000);
+
         window.addEventListener('load', function() {
+            clockTick();
             initWebSocket();
             fetchInitialData();
+            loadStrategyToggles();
+            loadStrategyRisk();
+            loadConfidenceThreshold();
+            loadPositionSizing();
+            loadConfidenceStats();
+            loadExtendedHours();
+            loadInternationalMarkets();
+            loadTradeableUniverse();
+            loadPauseNewEntries();
+            authFetch('/api/test-all-strategies/status').then(r => r.json()).then(data => {
+                if (data.running) startTestSweepPolling();
+            }).catch(e => console.error(e));
+            loadOrders();
+            loadBracketOrders();
+            loadPositions();
+            loadAccountMode();
+            loadSystemHealth();
+            loadActivity();
+            loadNewsAlerts();
+            loadCapitalAnomalies();
+            loadPerformanceOverview();
+            loadStrategyPerformance();
+            loadRecentClosedOrders();
         });
-    </script>
+  </script>
 </body>
 </html>

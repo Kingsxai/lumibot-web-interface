@@ -45,7 +45,7 @@ def main():
     benchmark_asset = Asset(symbol=args.symbol, asset_type="stock")
 
     try:
-        result, strategy = MultiStrategyBot.backtest(
+        result = MultiStrategyBot.backtest(
             datasource_class=YahooDataBacktesting,
             backtesting_start=start,
             backtesting_end=end,

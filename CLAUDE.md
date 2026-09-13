@@ -1,0 +1,242 @@
+# lumibot-web-interface — read this first
+
+This is a multi-strategy paper-trading bot (Lumibot), **Alpaca-only**
+(`BROKER_PROVIDER=alpaca` in `.env`), with a Flask/SocketIO dashboard. A
+brief Interactive Brokers migration (2026-09-02 through 2026-09-10, 34
+international markets + forex + a 5-category pod system) was fully
+reverted back to Alpaca-only — IB's per-share commission structure didn't
+fit this account's thin scalping margins on a small account. Every
+IB-only file (scanners, `ib_connector.py`, `ib_side_channel_trader.py`,
+`ibapi_forex/`) is gone from disk (backed up locally by the user, then
+removed from the VM); IB-related code paths still present below are
+dormant remnants, imported defensively and gated so nothing crashes, not
+active behavior. **Before doing any work in this project, read through the
+code below to build a current, accurate understanding — don't rely on
+memory notes alone.** Memory captures history, decisions, and *why*
+things are the way they are; it can go stale on *what the code actually
+does right now* — this file has gone stale that exact way twice now: once
+by 2026-09-07 (still describing a 7-strategy Alpaca-only bot after an
+8th strategy shipped), and again by 2026-09-13 (still describing the IB
+dual-broker architecture three days after it was reverted, with no
+mention of several modules/strategies that shipped in the meantime).
+Last verified against the actual code 2026-09-13. Use memory for context
+and rationale; use the files below for ground truth.
+
+## Reading order
+
+1. **`bot_runner.py`** — entry point. Loads `.env`, connects the broker
+   (`initialize_broker()` reads `BROKER_PROVIDER`, defaults to `alpaca`;
+   an `interactive_brokers` branch still exists but is dormant — nothing
+   currently sets that env var), starts the strategy bot in a background
+   thread, starts the Flask/SocketIO server. This file also still carries
+   several runtime monkey-patches on Lumibot's own IB broker class (a
+   delayed-tick-type remap + non-positive-price guard on
+   `IBWrapper.tickPrice`, a short-TTL cache/lock around
+   `_get_balances_at_broker`) and still polls for `self.ib_aux` to wire
+   into the dashboard API (`init_extended_hours_trader`/
+   `init_international_markets_trader`) and consumes a watchdog-only
+   safety-resume flag — all of this only does anything if
+   `BROKER_PROVIDER=interactive_brokers` is ever set again (`self.ib_aux`
+   is `None` on Alpaca, so the wiring is a no-op). Read the inline
+   comments if IB is ever revisited; the real incidents they were written
+   for are still explained there.
+2. **`config.py`** — all tunables: position sizing (`MAX_POSITION_SIZE`
+   = 37% of portfolio per position, dashboard-editable, raised from 10%
+   on 2026-09-12), a flat `HARD_POSITION_CEILING_GBP` = $250 hard dollar
+   ceiling on any single position (name kept from the IB/GBP era, now
+   just a USD ceiling reused as-is post-reversal — this is the number
+   that actually binds at this account's size, not the percentage),
+   `CAPITAL_SANITY_THRESHOLD_GBP`, stop-loss/take-profit defaults,
+   per-strategy allocation percentages, `STRATEGY_PRIORITY_RANK` (see
+   #3's priority-takeover note), and the asset-class-rider toggles
+   (`ENABLE_VIX_RIDER` etc., see #8). `INTERNATIONAL_MARKETS`,
+   `FOREX_PAIRS`, and the IB-connection constants are IB-era leftovers,
+   unused since the reversal — don't treat their presence as evidence
+   international/forex trading is active.
+3. **`strategy_manager.py`** — the core, ~3100 lines. `MultiStrategyBot` (a
+   Lumibot `Strategy` subclass) orchestrates every sub-strategy each
+   iteration cycle (`on_trading_iteration`), handles signal logging,
+   secondary-indicator confirmation, the Phase 4 meta-model confidence
+   gate, the 2026-09-01 per-symbol regime-precedence controller, the
+   2026-09-12 fixed-priority takeover system (`_check_priority_takeovers`
+   — a higher-`STRATEGY_PRIORITY_RANK` strategy can take over an open
+   position's exits when multiple strategies signal the same symbol the
+   same cycle; never liquidates/re-enters, unit-tested but the priority
+   order itself is unvalidated against real trading), bracket order
+   placement/tracking, the same-cycle capital-reservation/symbol-lock,
+   and the cross-strategy exclusive ownership lock. The five `pod_*`
+   toggles and `self.ib_aux`/`self.pod_connector` (both `None` on Alpaca)
+   are permanently inert now — `POD_MODULES` builds to `{}` since the pod
+   scanner modules don't exist on disk, so `_run_pod_strategies` always
+   no-ops regardless of toggle state. Read this fully — most bugs and
+   design decisions live here.
+4. **The strategy files** — 9 core strategies, each with an `.analyze()`
+   method returning `{symbol: "BUY"/"SELL"/"HOLD"}`, all live-tested:
+   - `momentum_allocator.py`, `breakout.py`, `mean_reversion.py`,
+     `vwap.py`, `gap_and_go.py`, `reversal.py`, `market_profile.py`,
+     `scalping.py` — all 8 pull their candidate symbols from
+     `regime_router.py`'s shared, regime-routed pool (see #5) rather than
+     each keeping its own universe.
+   - `scalping_v2.py` (added 2026-09-08, own dashboard toggle seeded OFF)
+     — MACD histogram flip + Stoch RSI K/D cross confluence on 1-minute
+     bars; uses its own fixed-fallback universe via `symbol_universe.py`'s
+     `load_universe`, not `regime_router.py`.
+   - **`sentiment` is NOT a strategy** (changed 2026-09-01) — `news_sentiment.py`'s
+     `NewsSentimentAnalyzer` is purely a symbol-selection input:
+     `scalping.py`'s `_sentiment_candidates()` calls into it to add
+     symbols with a current positive sentiment reading as extra scan
+     candidates each cycle. It never places its own orders, has no
+     toggle, no regime assignment, and doesn't appear in
+     `signal_logger.ALL_STRATEGY_NAMES`. `NewsSentimentAnalyzer.analyze()`
+     itself still exists and is still callable (harmlessly, read-only)
+     via `/api/strategy-preview`.
+   - **`sentiment.py` is dead code** — confirmed not imported anywhere, an
+     earlier cruder unused prototype of `news_sentiment.py`'s scoring
+     logic. Don't confuse the two.
+   - **14 more strategies in `extended_strategies_live.py`** (2026-09-11,
+     from a sizing/collision-simulation marathon — `lab_range`,
+     `supply_demand`, `supertrend_200ema`, `fakeout_breakout_fib`,
+     `macd_200ema`, `ema_ribbon_smi`, `discount_zone`,
+     `breakout_chandelier`, `volume_divergence_grab`, `asymmetric_dual`,
+     `rigorous_rr`, `volume_absorption`, `candle_taxonomy`,
+     `volume_profile`) — all minute-bar, all pull from `regime_router.py`,
+     all seeded OFF (real code, never live-exercised; check current
+     toggle state before assuming any of them is actually trading).
+   - The five `pod_*` names in `ALL_STRATEGY_NAMES` are IB-pod leftovers
+     (see #3) — permanently inert, not real strategies to reason about.
+5. **Supporting modules**: `regime_router.py` (2026-09-09, the shared
+   candidate pool for the 8 original core strategies plus the 14
+   extended ones — live-discovers candidates via Alpaca's screener,
+   classifies each one's current regime via `regime_matcher.py`, routes
+   it to whichever strategy(ies) that regime is assigned to, and drops
+   anything flagged by its efficiency-ratio "chaos filter" for extreme
+   whipsaw price action; disk-cached so a restart doesn't force a cold
+   re-scan), `regime_indicators.py` (shared technical indicators),
+   `regime_matcher.py` (per-symbol regime classification +
+   `STRATEGY_REGIMES`), `confirmation.py` (secondary-indicator
+   confirmation gate — also applies the VIX rider uniformly to every
+   core/extended strategy), `asset_class_riders.py` (VIX rider is the
+   only one with a live caller; gold-macro/crypto-rotation riders are
+   enabled in `config.py` but have no live caller since the pod system
+   they were built for is gone; forex-carry is a stub, always off),
+   `meta_model.py` + `train_meta_model.py` (Phase 4 confidence models),
+   `signal_logger.py` (`signals.db`, `ALL_STRATEGY_NAMES`, the pod
+   toggles), `symbol_screener.py` + `symbol_universe.py` (Alpaca-based
+   screener candidates and scalping_v2's fixed-universe fallback).
+   `portfolio_manager.py` and `risk_rules.py` were built 2026-09-03 for
+   the IB pod system's cross-category capital allocation and per-category
+   stop/take-profit — both say so in their own module docstrings ("not
+   wired into the live trading path"), and with the pod system now
+   permanently inert, both are confirmed orphaned: still imported by
+   `strategy_manager.py`, never actually called in the live path.
+   `portfolio_manager.py` also has a stale hardcoded 10%-of-portfolio
+   constant that no longer matches `config.MAX_POSITION_SIZE` (now 37%)
+   — harmless since nothing calls it, but don't use it as a reference for
+   the real live cap. `order_executor.py` no longer exists (was IB-only).
+6. **`api.py`** — REST/WebSocket API for the dashboard
+   (`templates/dashboard.html`), ~1300 lines, 30+ routes (positions,
+   orders, strategy toggles/risk, confidence/regime stats, pause/resume,
+   live-vs-paper account-mode + credentials storage, test-all-strategies
+   sweep). The extended-hours/international toggle routes still exist but
+   have nothing to drive since `self.ib_aux` is `None` on Alpaca. Requires
+   `X-API-Key` (or `?key=`) matching `DASHBOARD_API_KEY` in `.env` on
+   every `/api/*` route and the socket.io handshake.
+7. **The Phase 5 AI integration** ("Phase 5" is this project's own term,
+   unrelated to the older roadmap's real-money Phase 5/6 — see project
+   memory) — a live A/B experiment comparing full AI trading autonomy
+   against a human-gated process, both paper-money-only, unaffected by
+   the broker reversal above (both groups were already Alpaca/IB as
+   designed):
+   - **Group 1** (`/home/VMbot01/lumibot-alpaca-ai/`, a separate, isolated
+     repo, NOT under this directory) — Alpaca paper account, a once-daily
+     Claude Code agent (cron) that can propose AND (via a separate
+     human-run `execute_approved_trades.py --approve` step) execute
+     trades within hard-coded guardrails (`risk_ceilings.py`). A separate
+     deterministic `manage_positions.py` cron enforces intraday stops.
+   - **Group 2** (`proposals/` inside *this* repo) — `generate_context.py`
+     reads real `signals.db` data; a daily cron-invoked Claude Code agent
+     (`daily_proposal_prompt.md`, no Bash access) writes
+     `proposals/YYYY-MM-DD.md`; `approve_proposal.py` (CLI, human-run)
+     submits an approved proposal through the dashboard's own
+     `POST /api/orders` endpoint.
+   - Both groups are capped to a $136 virtual/real capital ceiling for
+     comparability. Full design history is in project memory
+     (`project_phase5_autonomous_ai_trading` and linked memories) — read
+     that before changing anything here.
+8. **Operational scripts** (`scripts/`): `start_bot_cron.sh` (launches the
+   bot 5 min before market open, cron, checks real ET time since this
+   cron has no per-crontab timezone support), `watchdog.sh` (self-healing
+   restart on a stale iteration heartbeat, cron every minute, market-
+   hours-aware; its IB-Gateway health check is gated on `BROKER_PROVIDER`
+   from `.env` and currently dormant under Alpaca), `test_fractional_stock_order.py`
+   (one-off live fractional/cash-quantity order probe).
+9. **`backtest_runner.py`** / `label_signals.py` / `run_multi_backtest.py`
+   — backtesting and retrospective outcome labeling, for the daily-bar
+   strategies only (see Live operation below). `hold_time_analysis/`
+   holds one-off analysis scripts + their JSON/txt output, not part of
+   the live system. The many `sandbox_*.py`/`marathon_*.py`/`run_*.py`/
+   `gather_*.py` files at the repo root are similarly one-off exploratory
+   scripts from the strategy-testing marathons — not part of the live
+   system, not worth enumerating here.
+
+## Live operation, in one sentence each
+
+- Starting `bot_runner.py` only starts the process — trading itself
+  requires a dashboard "Start" click (`POST /api/start`), a deliberate
+  manual gate.
+- `self.set_market("24/5")` — the iteration loop runs continuously
+  Monday-Friday, not just NASDAQ regular hours; each strategy/subsystem
+  gates its own session-appropriate behavior internally rather than the
+  loop itself sleeping outside 09:30-16:00 ET.
+- `sleeptime` must be a string with an explicit unit (e.g. `"60S"`) —
+  Lumibot interprets a bare int as **minutes**, not seconds (this exact
+  mistake caused a real multi-hour "silent hang" investigation before the
+  actual cause was found).
+- 6 of the 9 core strategies decide off **daily bars**, not intraday
+  ticks, even live — decisions are stable within any given day. The
+  exceptions are `scalping.py`, `market_profile.py`, and `scalping_v2.py`
+  (added 2026-09-08) — all three run off minute bars and can change their
+  decision within the same day. All 14 strategies in
+  `extended_strategies_live.py` are minute-bar too.
+- Every minute-bar strategy (`scalping.py`, `market_profile.py`,
+  `scalping_v2.py`, and all 14 in `extended_strategies_live.py`) skips
+  itself entirely during any Lumibot backtest (`is_backtesting` check) —
+  never remove this. `YahooDataBacktesting`'s underlying cache is keyed by
+  asset only, not `(asset, timestep)`, so once another strategy caches a
+  symbol's daily bars, a later "minute" request for that same symbol
+  silently returns the cached daily data instead of failing — fabricating
+  believable-looking signals off daily volatility. Minute-bar strategies
+  can only be validated against real minute data directly (Alpaca's own
+  historical API), never through `backtest_runner.py`/`run_multi_backtest.py`.
+- `confidence-stats`'s "fired" count is NOT proof an order executed — it
+  increments before order placement is even attempted, with no rollback
+  on failure. Verify real execution against the broker's own order/
+  position data directly when it matters.
+- Positions are broker-level (per symbol, not per strategy) — an
+  exclusive ownership lock in `_close_position` prevents one strategy
+  from closing another's position; only the opening strategy's own
+  signal, the bracket order's own stop-loss/take-profit, the news
+  emergency stop (below), or a higher-priority strategy's takeover
+  (`_check_priority_takeovers`, #3) can affect it.
+- `_check_news_emergency_stop()` liquidates ANY open position, any
+  strategy, the moment sentiment on that symbol falls to
+  `config.NEWS_EMERGENCY_STOP_THRESHOLD` (-0.7) — bypasses the ownership
+  lock on purpose, same as the bracket order's own stop-loss/take-profit.
+  Not the same thing as scalping's sentiment rider or mean_reversion's
+  momentum filter — those gate NEW entries; this reacts to positions
+  already open.
+- Lumibot's own broker/data-source layer can call `get_last_price`/
+  position-valuation directly on `self.broker`, bypassing this project's
+  `Strategy`-subclass overrides entirely — confirmed live during the IB
+  era (LOV, then EURUSD/USDCZK noise on symbols that no longer trade
+  under Alpaca-only) but the underlying gap in Lumibot itself isn't
+  broker-specific; watch for the same symptom (silent stale-price/"Unable
+  to get data" noise) recurring on an Alpaca symbol before assuming it
+  can't happen. Not fixable from the `Strategy` subclass; needs a broker/
+  data-source-level monkey-patch when it's worth fixing (see
+  `bot_runner.py`'s existing IB-era patches for the established
+  technique).
+- This is a **paper-trading account** (Alpaca), but connected to real
+  brokerage infrastructure — live bot start/stop, `.env`/credentials, and
+  any destructive git operation require the user's explicit yes each
+  time, even if a previous session was told the same thing.

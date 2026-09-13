@@ -1,0 +1,807 @@
+{
+  "date": "2026-09-11",
+  "generated_at": "2026-09-11T13:40:02.076845",
+  "recent_signals_24h": [
+    {
+      "timestamp": "2026-09-11T09:39:26.317875-04:00",
+      "strategy_name": "reversal",
+      "symbol": "BBD",
+      "action": "SELL",
+      "confirmed": 1,
+      "entry_price": 3.585
+    },
+    {
+      "timestamp": "2026-09-11T09:39:26.248797-04:00",
+      "strategy_name": "reversal",
+      "symbol": "RWT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.545
+    },
+    {
+      "timestamp": "2026-09-11T09:39:25.979630-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:39:25.847510-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 11.52
+    },
+    {
+      "timestamp": "2026-09-11T09:39:25.764545-04:00",
+      "strategy_name": "vwap",
+      "symbol": "MSFT",
+      "action": "SELL",
+      "confirmed": 1,
+      "entry_price": 498.08
+    },
+    {
+      "timestamp": "2026-09-11T09:39:25.687587-04:00",
+      "strategy_name": "mean_reversion",
+      "symbol": "BBD",
+      "action": "SELL",
+      "confirmed": 1,
+      "entry_price": 3.585
+    },
+    {
+      "timestamp": "2026-09-11T09:39:25.647882-04:00",
+      "strategy_name": "mean_reversion",
+      "symbol": "MSFT",
+      "action": "SELL",
+      "confirmed": 1,
+      "entry_price": 498.08
+    },
+    {
+      "timestamp": "2026-09-11T09:39:25.606148-04:00",
+      "strategy_name": "mean_reversion",
+      "symbol": "ITUB",
+      "action": "SELL",
+      "confirmed": 1,
+      "entry_price": 8.305
+    },
+    {
+      "timestamp": "2026-09-11T09:39:25.568406-04:00",
+      "strategy_name": "mean_reversion",
+      "symbol": "AAPL",
+      "action": "SELL",
+      "confirmed": 1,
+      "entry_price": 333.45500000000004
+    },
+    {
+      "timestamp": "2026-09-11T09:39:25.479392-04:00",
+      "strategy_name": "mean_reversion",
+      "symbol": "AGNC",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 10.254999999999999
+    },
+    {
+      "timestamp": "2026-09-11T09:39:25.342343-04:00",
+      "strategy_name": "breakout",
+      "symbol": "AAPL",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 333.45500000000004
+    },
+    {
+      "timestamp": "2026-09-11T09:39:25.196795-04:00",
+      "strategy_name": "breakout",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:39:24.964065-04:00",
+      "strategy_name": "breakout",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 11.52
+    },
+    {
+      "timestamp": "2026-09-11T09:39:24.857700-04:00",
+      "strategy_name": "scalping",
+      "symbol": "ITUB",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 8.305
+    },
+    {
+      "timestamp": "2026-09-11T09:39:24.727445-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 11.52
+    },
+    {
+      "timestamp": "2026-09-11T09:39:24.595514-04:00",
+      "strategy_name": "momentum",
+      "symbol": "MSFT",
+      "action": "SELL",
+      "confirmed": 1,
+      "entry_price": 498.08
+    },
+    {
+      "timestamp": "2026-09-11T09:39:24.545865-04:00",
+      "strategy_name": "momentum",
+      "symbol": "AAPL",
+      "action": "SELL",
+      "confirmed": 1,
+      "entry_price": 333.45500000000004
+    },
+    {
+      "timestamp": "2026-09-11T09:39:24.465072-04:00",
+      "strategy_name": "momentum",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 11.52
+    },
+    {
+      "timestamp": "2026-09-11T09:19:13.470408-04:00",
+      "strategy_name": "reversal",
+      "symbol": "RWT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.13
+    },
+    {
+      "timestamp": "2026-09-11T09:19:13.326196-04:00",
+      "strategy_name": "reversal",
+      "symbol": "SKIL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.22
+    },
+    {
+      "timestamp": "2026-09-11T09:19:13.193260-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:19:13.099811-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:19:12.827835-04:00",
+      "strategy_name": "breakout",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:19:12.731017-04:00",
+      "strategy_name": "breakout",
+      "symbol": "PLTD",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.38
+    },
+    {
+      "timestamp": "2026-09-11T09:19:12.576452-04:00",
+      "strategy_name": "breakout",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:19:12.416093-04:00",
+      "strategy_name": "scalping",
+      "symbol": "ITUB",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.280000000000001
+    },
+    {
+      "timestamp": "2026-09-11T09:19:12.300314-04:00",
+      "strategy_name": "scalping",
+      "symbol": "BBD",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.58
+    },
+    {
+      "timestamp": "2026-09-11T09:19:12.163317-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:19:12.090173-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TSLG",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.79
+    },
+    {
+      "timestamp": "2026-09-11T09:19:11.922921-04:00",
+      "strategy_name": "momentum",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:18:13.440604-04:00",
+      "strategy_name": "reversal",
+      "symbol": "RWT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.13
+    },
+    {
+      "timestamp": "2026-09-11T09:18:13.283679-04:00",
+      "strategy_name": "reversal",
+      "symbol": "SKIL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.22
+    },
+    {
+      "timestamp": "2026-09-11T09:18:13.126712-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:18:13.047408-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:18:12.818309-04:00",
+      "strategy_name": "breakout",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:18:12.769711-04:00",
+      "strategy_name": "breakout",
+      "symbol": "PLTD",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.38
+    },
+    {
+      "timestamp": "2026-09-11T09:18:12.687578-04:00",
+      "strategy_name": "breakout",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:18:12.547736-04:00",
+      "strategy_name": "scalping",
+      "symbol": "ITUB",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.280000000000001
+    },
+    {
+      "timestamp": "2026-09-11T09:18:12.439194-04:00",
+      "strategy_name": "scalping",
+      "symbol": "BBD",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.58
+    },
+    {
+      "timestamp": "2026-09-11T09:18:12.308974-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:18:12.225208-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TSLG",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.79
+    },
+    {
+      "timestamp": "2026-09-11T09:18:12.135221-04:00",
+      "strategy_name": "scalping",
+      "symbol": "SNAP",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.12
+    },
+    {
+      "timestamp": "2026-09-11T09:18:11.963350-04:00",
+      "strategy_name": "momentum",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:17:13.350778-04:00",
+      "strategy_name": "reversal",
+      "symbol": "RWT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.13
+    },
+    {
+      "timestamp": "2026-09-11T09:17:13.235191-04:00",
+      "strategy_name": "reversal",
+      "symbol": "SKIL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.22
+    },
+    {
+      "timestamp": "2026-09-11T09:17:13.134836-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:17:12.990142-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:17:12.787087-04:00",
+      "strategy_name": "breakout",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:17:12.701839-04:00",
+      "strategy_name": "breakout",
+      "symbol": "PLTD",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.38
+    },
+    {
+      "timestamp": "2026-09-11T09:17:12.606979-04:00",
+      "strategy_name": "breakout",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:17:12.483066-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 488.34000000000003
+    },
+    {
+      "timestamp": "2026-09-11T09:17:12.318346-04:00",
+      "strategy_name": "scalping",
+      "symbol": "ITUB",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.280000000000001
+    },
+    {
+      "timestamp": "2026-09-11T09:17:12.169848-04:00",
+      "strategy_name": "scalping",
+      "symbol": "BBD",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.58
+    },
+    {
+      "timestamp": "2026-09-11T09:17:12.070170-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:17:12.007628-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TSLG",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.79
+    },
+    {
+      "timestamp": "2026-09-11T09:17:11.887399-04:00",
+      "strategy_name": "momentum",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:16:13.555669-04:00",
+      "strategy_name": "market_profile",
+      "symbol": "SNAP",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.12
+    },
+    {
+      "timestamp": "2026-09-11T09:16:13.444178-04:00",
+      "strategy_name": "reversal",
+      "symbol": "RWT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.13
+    },
+    {
+      "timestamp": "2026-09-11T09:16:13.297656-04:00",
+      "strategy_name": "reversal",
+      "symbol": "SKIL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.22
+    },
+    {
+      "timestamp": "2026-09-11T09:16:13.173522-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:16:13.061994-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:16:12.857284-04:00",
+      "strategy_name": "breakout",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:16:12.777977-04:00",
+      "strategy_name": "breakout",
+      "symbol": "PLTD",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.38
+    },
+    {
+      "timestamp": "2026-09-11T09:16:12.625932-04:00",
+      "strategy_name": "breakout",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:16:12.510580-04:00",
+      "strategy_name": "scalping_v2",
+      "symbol": "MSFT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 488.34000000000003
+    },
+    {
+      "timestamp": "2026-09-11T09:16:12.395958-04:00",
+      "strategy_name": "scalping",
+      "symbol": "ITUB",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.280000000000001
+    },
+    {
+      "timestamp": "2026-09-11T09:16:12.254644-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TSLL",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 9.635000000000002
+    },
+    {
+      "timestamp": "2026-09-11T09:16:12.182935-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:16:12.075836-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TSLG",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.785
+    },
+    {
+      "timestamp": "2026-09-11T09:16:11.956750-04:00",
+      "strategy_name": "momentum",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:15:57.695334-04:00",
+      "strategy_name": "reversal",
+      "symbol": "RWT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.13
+    },
+    {
+      "timestamp": "2026-09-11T09:15:57.541968-04:00",
+      "strategy_name": "reversal",
+      "symbol": "SKIL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.22
+    },
+    {
+      "timestamp": "2026-09-11T09:15:57.436939-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:15:57.282095-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:15:57.086624-04:00",
+      "strategy_name": "breakout",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:15:56.956692-04:00",
+      "strategy_name": "breakout",
+      "symbol": "PLTD",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.38
+    },
+    {
+      "timestamp": "2026-09-11T09:15:56.860266-04:00",
+      "strategy_name": "breakout",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:15:56.660666-04:00",
+      "strategy_name": "scalping",
+      "symbol": "ITUB",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.280000000000001
+    },
+    {
+      "timestamp": "2026-09-11T09:15:56.478344-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:15:56.366241-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TSLG",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.785
+    },
+    {
+      "timestamp": "2026-09-11T09:15:56.242788-04:00",
+      "strategy_name": "momentum",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:14:13.224014-04:00",
+      "strategy_name": "market_profile",
+      "symbol": "SNAP",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.12
+    },
+    {
+      "timestamp": "2026-09-11T09:14:13.127522-04:00",
+      "strategy_name": "reversal",
+      "symbol": "RWT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.13
+    },
+    {
+      "timestamp": "2026-09-11T09:14:12.939213-04:00",
+      "strategy_name": "reversal",
+      "symbol": "SKIL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.22
+    },
+    {
+      "timestamp": "2026-09-11T09:14:12.798900-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:14:12.714467-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:14:12.466763-04:00",
+      "strategy_name": "breakout",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:14:12.381692-04:00",
+      "strategy_name": "breakout",
+      "symbol": "PLTD",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.38
+    },
+    {
+      "timestamp": "2026-09-11T09:14:12.271398-04:00",
+      "strategy_name": "breakout",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:14:12.100722-04:00",
+      "strategy_name": "scalping",
+      "symbol": "ITUB",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 8.280000000000001
+    },
+    {
+      "timestamp": "2026-09-11T09:14:12.007449-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:14:11.931137-04:00",
+      "strategy_name": "scalping",
+      "symbol": "TSLG",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 4.79
+    },
+    {
+      "timestamp": "2026-09-11T09:14:11.804295-04:00",
+      "strategy_name": "momentum",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:13:13.435823-04:00",
+      "strategy_name": "market_profile",
+      "symbol": "SNAP",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.12
+    },
+    {
+      "timestamp": "2026-09-11T09:13:13.362632-04:00",
+      "strategy_name": "reversal",
+      "symbol": "RWT",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 3.13
+    },
+    {
+      "timestamp": "2026-09-11T09:13:13.251070-04:00",
+      "strategy_name": "reversal",
+      "symbol": "SKIL",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.22
+    },
+    {
+      "timestamp": "2026-09-11T09:13:13.113867-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:13:12.973842-04:00",
+      "strategy_name": "gap_and_go",
+      "symbol": "TRAD.U",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 6.63
+    },
+    {
+      "timestamp": "2026-09-11T09:13:12.717108-04:00",
+      "strategy_name": "breakout",
+      "symbol": "WLDSW",
+      "action": "BUY",
+      "confirmed": 1,
+      "entry_price": 4.64
+    },
+    {
+      "timestamp": "2026-09-11T09:13:12.619076-04:00",
+      "strategy_name": "breakout",
+      "symbol": "PLTD",
+      "action": "BUY",
+      "confirmed": 0,
+      "entry_price": 5.38
+    }
+  ],
+  "note": "Read via direct SQLite access to signals.db -- works whether or not the live bot process is currently running. If recent_signals_24h is empty, either the bot hasn't run recently or the pods (pod_stock/pod_etf) haven't fired yet -- not necessarily an error."
+}
