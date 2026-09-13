@@ -14,13 +14,23 @@ active behavior. **Before doing any work in this project, read through the
 code below to build a current, accurate understanding — don't rely on
 memory notes alone.** Memory captures history, decisions, and *why*
 things are the way they are; it can go stale on *what the code actually
-does right now* — this file has gone stale that exact way twice now: once
-by 2026-09-07 (still describing a 7-strategy Alpaca-only bot after an
-8th strategy shipped), and again by 2026-09-13 (still describing the IB
-dual-broker architecture three days after it was reverted, with no
-mention of several modules/strategies that shipped in the meantime).
-Last verified against the actual code 2026-09-13. Use memory for context
-and rationale; use the files below for ground truth.
+does right now* — this file has gone stale that exact way three times
+now: 2026-09-07 (still describing a 7-strategy Alpaca-only bot after an
+8th strategy shipped), 2026-09-13 morning (still describing the IB
+dual-broker architecture three days after it was reverted), and
+2026-09-13 later the same day (missing `symbol_research.py` and the repo
+reorganization below, both added after the morning's rewrite). Last
+verified against the actual code 2026-09-13 (evening). Use memory for
+context and rationale; use the files below for ground truth.
+
+**Repo state**: this repo was previously on branch `Alpaca-only-project`
+plus a separate `alpaca-only-v2.0` branch that diverged from `main` for
+most of 2026-09-13's work (sandbox reorganization, README/requirements
+fixes, `symbol_research.py`). That divergence was merged into `main` the
+same day (GitHub PR #1) — `main` is now current and authoritative again,
+not behind. `lumibot-alpaca-ai` (Group 1, see #7) also got its own
+private GitHub repo for the first time this session
+(`github.com/Kingsxai/lumibot-alpaca-ai`) — it never had one before.
 
 ## Reading order
 
@@ -133,6 +143,29 @@ and rationale; use the files below for ground truth.
    constant that no longer matches `config.MAX_POSITION_SIZE` (now 37%)
    — harmless since nothing calls it, but don't use it as a reference for
    the real live cap. `order_executor.py` no longer exists (was IB-only).
+   `symbol_research.py` (2026-09-13, explicit user request) — an LLM-based
+   ICT/Smart-Money-Concepts trap-vs-genuine-move research rider, targeted
+   specifically at the 11 of 14 extended strategies with
+   `use_regime_chaos_filter=False` (the chaos filter was measured to help
+   only 4/16 strategies and hurt 12 — this fills that gap rather than
+   layering on strategies it already helps). Runs as its own standalone
+   cron job (`scripts/run_symbol_research.sh`, every 5 min, event-driven
+   on the 15-symbol rotating universe actually changing) — never inside
+   the live 60s loop; `strategy_manager.py` only ever does a cheap
+   `symbol_research.get_research()` cache read. Each real research call
+   feeds one `claude -p` invocation (no tool access, real data embedded
+   directly in the prompt) three real inputs: recent daily bars, SEC
+   Form 4 insider transactions (free, discretionary-vs-scheduled-10b5-1
+   aware), and options open interest by strike (Alpaca's Trading API,
+   confirmed free on this account's plan — real trade volume/OPRA data
+   is NOT, needs a paid Algo Trader Plus subscription, not used here).
+   Consumed on both sides of a trade: gates + damps the take-profit at
+   entry (`config.SYMBOL_RESEARCH_TP_MAX_MULTIPLIER`, currently 1.5), and
+   a late-arriving verdict also acts on an already-open position — a
+   trap verdict closes it immediately regardless of current P&L, a
+   genuine-move verdict widens its take-profit in place
+   (`_check_symbol_research_exits_and_tp_updates`). Fails open everywhere,
+   same convention as every other rider here.
 6. **`api.py`** — REST/WebSocket API for the dashboard
    (`templates/dashboard.html`), ~1300 lines, 30+ routes (positions,
    orders, strategy toggles/risk, confidence/regime stats, pause/resume,
@@ -172,12 +205,13 @@ and rationale; use the files below for ground truth.
    (one-off live fractional/cash-quantity order probe).
 9. **`backtest_runner.py`** / `label_signals.py` / `run_multi_backtest.py`
    — backtesting and retrospective outcome labeling, for the daily-bar
-   strategies only (see Live operation below). `hold_time_analysis/`
-   holds one-off analysis scripts + their JSON/txt output, not part of
-   the live system. The many `sandbox_*.py`/`marathon_*.py`/`run_*.py`/
-   `gather_*.py` files at the repo root are similarly one-off exploratory
-   scripts from the strategy-testing marathons — not part of the live
-   system, not worth enumerating here.
+   strategies only (see Live operation below). All the one-off
+   exploratory scripts from the strategy-testing marathons (formerly
+   loose `sandbox_*.py`/`marathon_*.py`/`run_*.py`/`gather_*.py` files at
+   the repo root, plus `hold_time_analysis/`) now live under `sandbox/`
+   (2026-09-13 reorganization), grouped into subfolders by test topic —
+   not part of the live system, not worth enumerating here, and
+   deliberately excluded from git (never pushed, local-only on this VM).
 
 ## Live operation, in one sentence each
 
@@ -236,6 +270,11 @@ and rationale; use the files below for ground truth.
   data-source-level monkey-patch when it's worth fixing (see
   `bot_runner.py`'s existing IB-era patches for the established
   technique).
+- `symbol_research.py`'s cron job (every 5 min) is the only thing in this
+  project that calls out to an LLM from the live system — everything
+  else is deterministic. It never runs inside `on_trading_iteration`
+  itself; check `symbol_research.log` / `symbol_research_cache.json` age
+  if a research verdict seems stale, not the bot's own logs.
 - This is a **paper-trading account** (Alpaca), but connected to real
   brokerage infrastructure — live bot start/stop, `.env`/credentials, and
   any destructive git operation require the user's explicit yes each
