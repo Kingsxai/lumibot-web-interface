@@ -63,17 +63,22 @@ GAP_REWARD_R = 2                # reversal.py's validated exit: fixed 2R target 
 # decision to make with the user, not something to silently backtest-
 # and-revert on a future session's own initiative.
 #
-# 2026-09-13, explicit user decision after the experiment was measured:
-# 0.02% produced 44 mean_reversion take_profit exits averaging a 0.064%
-# move for a NET LOSS of -$30.93 (plus 3 reversal TP exits at exactly
-# $0.00) -- the target sat inside the bid/ask spread + fill slippage, so
-# a "winning" exit filled below entry on average. User's call: "raise to
-# >=0.5%". 0.5% clears typical large-cap spread+slippage (~0.05-0.15%)
-# by several multiples so a take_profit exit actually books a gain. The
-# stops are still untouched (2x ATR / 1.5x ATR / VWAP-band-capped), so
-# reward:risk stays well below 1:1 -- this is a live observation setting,
-# not a validated exit; the strategies' own original targets (SMA20 /
-# 2R) remain the backtest-validated ones if this is ever revisited.
+# 2026-09-13, explicit user decision: raised 0.02% -> 0.5%. The only
+# real Alpaca-path evidence for the 0.02% setting is reversal's 3
+# take_profit exits on 2026-09-11 (BATL, ~10-min holds, exactly $0.00
+# each -- consistent with a target inside the spread, but n=3). NOTE: an
+# earlier draft of this comment blamed 44 mean_reversion take_profit
+# exits netting -$30.93 on this setting; those were IB-era side-channel
+# international trades (VOD/LLOY/IFX/VOW3..., side_channel=1, 09-04 and
+# 09-08) closed by the IB aux exit path BEFORE this constant existed --
+# not evidence about it. 0.5% clears typical large-cap spread+slippage
+# (~0.05-0.15%) by several multiples so a take_profit exit actually
+# books a gain. The stops are still untouched (2x ATR / 1.5x ATR /
+# VWAP-band-capped), so reward:risk stays well below 1:1 -- this is a
+# live observation setting, not a validated exit; the strategies' own
+# original targets (SMA20 / 2R, multi-day holds in backtest: reversal
+# averaged 2.2 days to its own exit signal) remain the backtest-
+# validated ones if this is ever revisited.
 MINIMAL_TAKE_PROFIT_PCT = 0.005
 
 MIN_BARS_REQUIRED = 90    # enough history for the 50-day ATR median plus warmup

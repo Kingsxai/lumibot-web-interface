@@ -126,10 +126,14 @@ private GitHub repo for the first time this session
    holds `MINIMAL_TAKE_PROFIT_PCT`, the fixed take-profit that
    `mean_reversion.py`/`vwap.py`/`reversal.py` use instead of their own
    validated SMA20/2R targets — set to 0.02% on 2026-09-09 as a user
-   experiment, measured live as a net loser because the target sat inside
-   the spread (44 mean_reversion "take_profit" exits netted −$30.93), and
-   raised to 0.5% on 2026-09-13 by user decision; the stops were never
-   touched, so reward:risk on those three is still far below 1:1),
+   experiment, raised to 0.5% on 2026-09-13 by user decision; the only
+   Alpaca-path evidence for 0.02% is reversal's 3 take_profit exits on
+   2026-09-11 at exactly $0.00 each, n=3 — the 44 one-minute
+   mean_reversion "take_profit" exits on 09-04/09-08 were IB-era
+   side-channel international trades, NOT this setting; the stops were
+   never touched, so reward:risk on those three is still far below 1:1,
+   and under the original targets backtests hold for days — reversal
+   averaged 2.2 days to its own exit signal),
    `regime_matcher.py` (per-symbol regime classification +
    `STRATEGY_REGIMES`), `confirmation.py` (secondary-indicator
    confirmation gate — also applies the VIX rider uniformly to every
