@@ -62,7 +62,19 @@ GAP_REWARD_R = 2                # reversal.py's validated exit: fixed 2R target 
 # gap_and_go's earlier test) -- if this needs revisiting, that's a real
 # decision to make with the user, not something to silently backtest-
 # and-revert on a future session's own initiative.
-MINIMAL_TAKE_PROFIT_PCT = 0.0002
+#
+# 2026-09-13, explicit user decision after the experiment was measured:
+# 0.02% produced 44 mean_reversion take_profit exits averaging a 0.064%
+# move for a NET LOSS of -$30.93 (plus 3 reversal TP exits at exactly
+# $0.00) -- the target sat inside the bid/ask spread + fill slippage, so
+# a "winning" exit filled below entry on average. User's call: "raise to
+# >=0.5%". 0.5% clears typical large-cap spread+slippage (~0.05-0.15%)
+# by several multiples so a take_profit exit actually books a gain. The
+# stops are still untouched (2x ATR / 1.5x ATR / VWAP-band-capped), so
+# reward:risk stays well below 1:1 -- this is a live observation setting,
+# not a validated exit; the strategies' own original targets (SMA20 /
+# 2R) remain the backtest-validated ones if this is ever revisited.
+MINIMAL_TAKE_PROFIT_PCT = 0.005
 
 MIN_BARS_REQUIRED = 90    # enough history for the 50-day ATR median plus warmup
 

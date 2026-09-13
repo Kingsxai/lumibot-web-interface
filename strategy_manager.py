@@ -1902,6 +1902,21 @@ class MultiStrategyBot(Strategy):
 
             if side == "sell":
                 ctx = self._pending_trade_closes.pop(symbol, None)
+                # 2026-09-13: never write closed_trades during a backtest.
+                # Found while auditing the live record: a 2026-09-09
+                # backtest run wrote 165 rows (opened_at in 2024, closed_at
+                # = that day's clock) into the LIVE signals.db closed_trades
+                # table, which is the single source of truth behind
+                # Performance Overview / Strategy Performance / Recent
+                # Closed Trades. Those rows silently inflated the "live"
+                # per-strategy stats (reversal showed 65.7% on n=102 when
+                # the real live sample was n=4). The `signals` table is
+                # meant to accumulate backtest rows (label_signals.py /
+                # the meta-model pipeline read them); closed_trades is not
+                # -- nothing in backtest_runner.py / run_multi_backtest.py /
+                # label_signals.py reads it, only the dashboard does.
+                if getattr(self, "is_backtesting", False):
+                    return
                 if not ctx or ctx["entry_price"] is None:
                     # 2026-09-11: this sell fill wasn't initiated by this
                     # bot's own software (_close_position always sets a

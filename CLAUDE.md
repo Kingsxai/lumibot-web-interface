@@ -20,7 +20,8 @@ now: 2026-09-07 (still describing a 7-strategy Alpaca-only bot after an
 dual-broker architecture three days after it was reverted), and
 2026-09-13 later the same day (missing `symbol_research.py` and the repo
 reorganization below, both added after the morning's rewrite). Last
-verified against the actual code 2026-09-13 (evening). Use memory for
+verified against the actual code 2026-09-13 (late evening, after the
+`closed_trades` cleanup under Live operation below). Use memory for
 context and rationale; use the files below for ground truth.
 
 **Repo state**: this repo was previously on branch `Alpaca-only-project`
@@ -121,7 +122,14 @@ private GitHub repo for the first time this session
    it to whichever strategy(ies) that regime is assigned to, and drops
    anything flagged by its efficiency-ratio "chaos filter" for extreme
    whipsaw price action; disk-cached so a restart doesn't force a cold
-   re-scan), `regime_indicators.py` (shared technical indicators),
+   re-scan), `regime_indicators.py` (shared technical indicators; also
+   holds `MINIMAL_TAKE_PROFIT_PCT`, the fixed take-profit that
+   `mean_reversion.py`/`vwap.py`/`reversal.py` use instead of their own
+   validated SMA20/2R targets — set to 0.02% on 2026-09-09 as a user
+   experiment, measured live as a net loser because the target sat inside
+   the spread (44 mean_reversion "take_profit" exits netted −$30.93), and
+   raised to 0.5% on 2026-09-13 by user decision; the stops were never
+   touched, so reward:risk on those three is still far below 1:1),
    `regime_matcher.py` (per-symbol regime classification +
    `STRATEGY_REGIMES`), `confirmation.py` (secondary-indicator
    confirmation gate — also applies the VIX rider uniformly to every
@@ -246,6 +254,17 @@ private GitHub repo for the first time this session
   increments before order placement is even attempted, with no rollback
   on failure. Verify real execution against the broker's own order/
   position data directly when it matters.
+- `closed_trades` in `signals.db` is live-only as of 2026-09-13 —
+  `on_filled_order` now returns before `log_closed_trade` when
+  `is_backtesting`. Before that, backtest runs wrote into the same table
+  (310 of 437 rows were backtest — 2024 `closed_at` dates, or written in
+  the 2026-09-09 12:xx burst with 2024/NULL `opened_at`), which inflated
+  every "live" per-strategy stat the dashboard showed. Those rows were
+  purged (127 real rows remained; pre-purge backup at
+  `~/signals_db_backup_2026-09-13_1816.zip`). The `signals` table still
+  accumulates backtest rows on purpose (`label_signals.py`/meta-model
+  read them) — only `closed_trades` is guarded. Any live-vs-backtest
+  comparison made before this date was built on mixed data.
 - Positions are broker-level (per symbol, not per strategy) — an
   exclusive ownership lock in `_close_position` prevents one strategy
   from closing another's position; only the opening strategy's own
@@ -279,3 +298,18 @@ private GitHub repo for the first time this session
   brokerage infrastructure — live bot start/stop, `.env`/credentials, and
   any destructive git operation require the user's explicit yes each
   time, even if a previous session was told the same thing.
+- **The bot is long-only by design, and the paper account hides real
+  small-account rules** (confirmed with the user 2026-09-13): shorting
+  needs a margin account, which needs $2,000 minimum equity — at $136
+  this is a cash account, no shorts, ever (`strategy_manager.py` already
+  flattens any accidental short). Under $25k in a margin account the
+  Pattern Day Trader rule caps day trades at 3 per rolling 5 business
+  days; in a cash account there is no PDT but sale proceeds settle T+1,
+  so a real $136 account gets roughly ONE round-trip per day across all
+  strategies combined. Alpaca paper enforces none of this — it simulates
+  margin with unlimited day trades — so every minute-bar strategy's live
+  paper record (e.g. mean_reversion's 51 trades at ~8-min holds) is not
+  reproducible with real money at this size. Before any real-money phase
+  the strategy mix must be re-simulated under that frequency cap. Never
+  propose a short strategy; long inverse ETFs (SQQQ/SPXS/SOXS/TZA) are
+  the only cash-account route to downside exposure.
