@@ -13,3 +13,6 @@ venv/
 
 # Ignore credentials
 .env
+
+# Downloaded SEC reference data (regenerates automatically, no value versioned)
+sec_ticker_cik_cache.json
